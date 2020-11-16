@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 *.lo
 *.d
 src/STUBS/*.a
@@ -7,3 +8,14 @@ src/spk_*
 src/Obj_*
 src/.libs
 src/style_*.h
+=======
+src/Obj_*/*
+src/STUBS/libmpi.a
+src/STUBS/mpi.o
+src/spk_mac
+src/style_*.h
+src/.libs
+src/*.o
+src/*.lo
+src/*.lo.d
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7

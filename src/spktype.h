@@ -56,8 +56,17 @@ typedef int tagint;
 typedef int64_t bigint;
 
 #define MAXSMALLINT INT_MAX
+<<<<<<< HEAD
 #define MAXTAGINT INT_MAX
+=======
+#ifdef INT64_MAX
+#define MAXTAGINT INT64_MAX
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 #define MAXBIGINT INT64_MAX
+#else
+#define MAXTAGINT INT_MAX
+#define MAXBIGINT INT_MAX
+#endif
 
 #define MPI_SPK_TAGINT MPI_INT
 #define MPI_SPK_BIGINT MPI_LONG_LONG

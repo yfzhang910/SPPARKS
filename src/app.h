@@ -25,7 +25,11 @@ class App : protected Pointers {
   int appclass;           // one of the enum values
   char *style;            // style name of app
   double time;            // current simulation time due to executed events
+<<<<<<< HEAD
   double realtime;        // current real time, scaled by vacancy concentration
+=======
+  double realtime;        // current real time, scaled by vacancy concentration 
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   double stoptime;        // time at which to stop this run
   int sites_exist;        // 1 if sites have been created
 
@@ -46,7 +50,10 @@ class App : protected Pointers {
   void run(int, char **);
   void reset_time(double);
   void *extract(const char *);
+<<<<<<< HEAD
   tagint min_site_ID();
+=======
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   tagint max_site_ID();
   virtual bigint memory_usage() {return 0;}
 

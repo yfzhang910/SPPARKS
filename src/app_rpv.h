@@ -13,6 +13,10 @@
 
 #ifdef APP_CLASS
 AppStyle(rpv,AppRpv)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 #else
 
 #ifndef SPK_APP_RPV_H
@@ -52,7 +56,11 @@ class AppRpv : public AppLattice {
 
   int nelement; //total reactions
   int *nsites_local; //statics of local element 
+<<<<<<< HEAD
   double KBT; //rate and propensity for hop diffusion 
+=======
+  double hpropensity; //rate and propensity for hop diffusion 
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   double **ebond1,**ebond2; //bond energy 
   double **disp; //atomic displacement  
   double *mbarrier; //migration barriers
@@ -88,8 +96,13 @@ class AppRpv : public AppLattice {
 
 //parameter for ballistic mixing 
   int nballistic;
+<<<<<<< HEAD
   int *bfreq,*time_old,*time_new;
   double *rdamp,*pn_local,*pn_global;
+=======
+  int *bfreq,*btypei,*btypej,*time_old,*time_new;
+  double *rpeak,*rdamp,*pn_local,*pn_global;
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   double **xmix,**pmix;
 
   struct Event {           // one event for an owned site

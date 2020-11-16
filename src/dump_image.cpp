@@ -589,7 +589,11 @@ void DumpImage::view_params()
 
 void DumpImage::create_image()
 {
+<<<<<<< HEAD
   int i,j,m,n,ivalue,nc,nd;
+=======
+  int i,j,m,ivalue;
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   double diameter;
   double *color;
 

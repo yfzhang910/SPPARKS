@@ -25,7 +25,7 @@
 #include "memory.h"
 #include "error.h"
 
-using namespace SPPARKS_NS;
+namespace SPPARKS_NS {
 
 #define MAXSTR 4096
 
@@ -417,6 +417,7 @@ double Output::next_time(double tcurrent, int logfreq, double delta,
   return tnew;
 }
 
+<<<<<<< HEAD
 /* ----------------------------------------------------------------------
    sum and print memory usage and precision
    result is only memory on proc 0, not averaged across procs
@@ -438,4 +439,6 @@ void Output::memory_usage()
       fprintf(logfile,"Memory usage per processor = %g Mbytes\n",mbytes);
     }
   }
+=======
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 }

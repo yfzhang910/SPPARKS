@@ -24,6 +24,7 @@
 
 using namespace SPPARKS_NS;
 
+<<<<<<< HEAD
 enum{inter,floater};                              // data type 
 enum{ZERO,FE,VACANCY,CU,NI,MN,Si,P,C,SIA};        // diagnosis terms   
 enum{hFE=11,hCU,hNI,hMN,hSi,hP,hC};               // hop steps for each element
@@ -31,6 +32,16 @@ enum{sink=30};                                    // number of sink absorption
 enum{recombine=41};                               // number of recombination    
 enum{dFE=61,dVACANCY,dCU,dNI,dMN,dSi,dP,dC,dSIA}; // MSD for each element 
 enum{energy=71,treal,fvt};                        // energy and realistic time  
+=======
+enum{inter,floater};                          // data type 
+enum{ZERO,FE,VACANCY,CU,NI,MN,Si,P,C,SIA};      // diagnosis terms   
+enum{hFE=11,hCU,hNI,hMN,hSi,hP,hC}; // hop steps for each element
+//enum{mFE=21,mVACANCY,mCU,mNI,mMN,mP,mC,mSIA}; // number of solute (monomers) in the matrix  
+enum{sink=30}; // number of sink absorption   
+enum{recombine=41}; // number of sink absorption   
+enum{dFE=61,dVACANCY,dCU,dNI,dMN,dSi,dP,dC,dSIA}; // MSD for each element 
+enum{energy=71,treal,fvt}; //energy and realistic time  
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 /* ---------------------------------------------------------------------- */
 
 DiagRpv::DiagRpv(SPPARKS *spk, int narg, char **arg) : Diag(spk,narg,arg)
@@ -159,7 +170,13 @@ void DiagRpv::compute()
 {
   int ninter,nfloater;
   int sites[10],nhop[10],ivalue; // int data
+<<<<<<< HEAD
   int nlocal = apprpv->nlocal;
+=======
+  int estyle = apprpv->engstyle; // energy style 
+  int nlocal = apprpv->nlocal;
+//  int *monomer_local = apprpv->monomer_local; // monomers
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   double dvalue ; // double data 
   double msd[10] ;
 

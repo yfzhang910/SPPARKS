@@ -261,7 +261,11 @@ void Set::set_single(int lhs, int rhs)
 
     if (lhs == IARRAY) {
       if (regionflag == 0 && number > 0) {
+<<<<<<< HEAD
         while (count < number) {  // each proc makes "number" of changes, YF
+=======
+        while (count < number) {  // each proc makes "number" of changes, YF 
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 	  iglobal = int(maxID*random->uniform());
           if(iglobal >= maxID) continue;
 	  loc = hash.find(iglobal);
@@ -271,9 +275,15 @@ void Set::set_single(int lhs, int rhs)
 	  if (rhs == VALUE) iarray[siteindex][i] = ivalue;
 	  else iarray[siteindex][i] = id[i] % MAXSMALLINT;
 	  count++;
+<<<<<<< HEAD
         }
       } else if (regionflag && number > 0) {
         while(count < number) {
+=======
+        } 
+      } else if (regionflag && number > 0) {
+        while(count < number) {  
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 	  iglobal = int(maxID*random->uniform());
           if(iglobal >= maxID) continue;
 	  loc = hash.find(iglobal);
@@ -285,7 +295,11 @@ void Set::set_single(int lhs, int rhs)
 	    else iarray[siteindex][i] = id[i] % MAXSMALLINT;
 	    count++;
 	  }
+<<<<<<< HEAD
         }
+=======
+        } 
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
       } else if (regionflag == 0 && fraction == 1.0) {
 	for (i = 0; i < nlocal; i++) {
 	  if (ncondition && condition(i)) continue;
@@ -329,7 +343,11 @@ void Set::set_single(int lhs, int rhs)
 
     } else if (lhs == DARRAY) {
       if (regionflag == 0 && number > 0) {
+<<<<<<< HEAD
         while(count < number) {
+=======
+        while(count < number) {  
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 	  iglobal = int(maxID*random->uniform());
           if(iglobal >= maxID) continue;
 	  loc = hash.find(iglobal);
@@ -339,9 +357,15 @@ void Set::set_single(int lhs, int rhs)
 	  if (rhs == VALUE) darray[siteindex][i] = dvalue;
 	  else darray[siteindex][i] = id[i] % MAXSMALLINT;
 	  count++;
+<<<<<<< HEAD
         }
       } else if (regionflag && number > 0) {
         while(count < number) {
+=======
+        } 
+      } else if (regionflag && number > 0) {
+        while(count < number) {  
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 	  iglobal = int(maxID*random->uniform());
           if(iglobal >= maxID) continue;
 	  loc = hash.find(iglobal);
@@ -353,7 +377,11 @@ void Set::set_single(int lhs, int rhs)
 	    else darray[siteindex][i] = id[i] % MAXSMALLINT;
 	    count++;
 	  }
+<<<<<<< HEAD
         }
+=======
+        } 
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
       } else if (regionflag == 0 && fraction == 1.0) {
 	for (i = 0; i < nlocal; i++) {
 	  if (ncondition && condition(i)) continue;
@@ -550,7 +578,11 @@ void Set::set_range(int lhs, int rhs)
       int range = ivaluehi - ivaluelo + 1;
 
       if (regionflag == 0 && number > 0) {
+<<<<<<< HEAD
         while (count < number) {  // each proc makes "number" of changes, YF
+=======
+        while (count < number) {  // each proc makes "number" of changes, YF 
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
           ivalue = random->irandom(range);
 	  iglobal = int(maxID*random->uniform());
           if(iglobal >= maxID) continue;
@@ -560,7 +592,11 @@ void Set::set_range(int lhs, int rhs)
 	  if (ncondition && condition(i)) continue;
 	  iarray[siteindex][i] = ivalue-1+ivaluelo;
 	  count++;
+<<<<<<< HEAD
         }
+=======
+        } 
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
       } else if (regionflag && number > 0) {
         while (count < number) {
 	  ivalue = random->irandom(range);
@@ -626,7 +662,11 @@ void Set::set_range(int lhs, int rhs)
       double range = dvaluehi - dvaluelo;
 
       if (regionflag == 0 && number > 0) {
+<<<<<<< HEAD
         while (count < number) {  // each proc makes "number" of changes, YF
+=======
+        while (count < number) {  // each proc makes "number" of changes, YF 
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
           dvalue = random->uniform();
 	  iglobal = int(maxID*random->uniform());
           if(iglobal >= maxID) continue;
@@ -636,7 +676,11 @@ void Set::set_range(int lhs, int rhs)
 	  if (ncondition && condition(i)) continue;
 	  darray[siteindex][i] = range*dvalue + dvaluelo;
 	  count++;
+<<<<<<< HEAD
         }
+=======
+        } 
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
       } else if (regionflag && number > 0) {
         while (count < number) {
 	  dvalue = random->uniform();

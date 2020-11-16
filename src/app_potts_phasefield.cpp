@@ -3,6 +3,13 @@
    http://www.cs.sandia.gov/~sjplimp/spparks.html
    Steve Plimpton, sjplimp@sandia.gov, Sandia National Laboratories
 
+<<<<<<< HEAD
+=======
+   Class AppPottsPhaseField - added by Eric Homer, ehomer@sandia.gov
+   Mar 31, 2011 - Most recent version.  Most of this was copied from
+   AppPotts and AppPottsNeighOnly.
+
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
    certain rights in this software.  This software is distributed under
@@ -11,6 +18,7 @@
    See the README file in the top-level SPPARKS directory.
 ------------------------------------------------------------------------- */
 
+<<<<<<< HEAD
 /* ----------------------------------------------------------------------
    Contributing authors: Eric Homer (BYU)
 ------------------------------------------------------------------------- */
@@ -18,6 +26,10 @@
 #include "math.h"
 #include "string.h"
 #include "stdlib.h"
+=======
+#include "string.h"
+#include "math.h"
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 #include "app_potts_phasefield.h"
 #include "solve.h"
 #include "random_park.h"
@@ -27,11 +39,19 @@
 #include "lattice.h"
 #include "comm_lattice.h"
 #include "timer.h"
+<<<<<<< HEAD
+=======
+#include "stdlib.h"
+#include "stdio.h"
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 
 using namespace SPPARKS_NS;
 
 // same as in create_sites.cpp and diag_cluster.cpp and lattice.cpp
+<<<<<<< HEAD
 
+=======
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 enum{NONE,LINE_2N,SQ_4N,SQ_8N,TRI,SC_6N,SC_26N,FCC,BCC,DIAMOND,
   FCC_OCTA_TETRA,RANDOM_1D,RANDOM_2D,RANDOM_3D};
 
@@ -44,6 +64,7 @@ AppPottsPhaseField::AppPottsPhaseField(SPPARKS *spk, int narg, char **arg) :
   ndouble = 1;
   allow_kmc = 0;
   allow_rejection = 1;
+<<<<<<< HEAD
   allow_app_update = 1;
   allow_masking = 0;
   numrandom = 2;
@@ -81,6 +102,33 @@ AppPottsPhaseField::AppPottsPhaseField(SPPARKS *spk, int narg, char **arg) :
   gamma = atof(arg[3]);
   M_c = atof(arg[4]);
   kappaC = atof(arg[5]);
+=======
+  allow_update = 1;
+  allow_masking = 0;
+  numrandom = 2;
+  delpropensity = 2;//need full neighbor lists of the 1st layer ghost sites
+
+  //add the double array
+  recreate_arrays();
+
+  //check the number of spins
+  if (nspins % 2)
+    error->all(FLERR,"AppPottsPhaseField must have even # of spins");
+
+  phaseChangeInt = nspins/2;
+
+  if (narg != 11)
+    error->all(FLERR,"Illegal app_style command - AppPottsPhaseField");
+
+  //dt_phasefield is set as a multiple of dt_rkmc in setup_end_app();
+  //set the multiple here. ( dt_phasefield = dt_rkmc / dt_phasefield_mult )
+  dt_phasefield_mult = atof(arg[2]);
+
+  //set the variables for the energetics and evolution
+  gamma=atof(arg[3]);
+  M_c=atof(arg[4]);
+  kappaC=atof(arg[5]);
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   a_1 = a_2 = atof(arg[6]);
 
   c_1 = atof(arg[7]);
@@ -88,6 +136,7 @@ AppPottsPhaseField::AppPottsPhaseField(SPPARKS *spk, int narg, char **arg) :
   c_3 = atof(arg[9]);
   c_4 = atof(arg[10]);
 
+<<<<<<< HEAD
   // set other default values
 
   nlocal_app = 0;
@@ -141,6 +190,21 @@ AppPottsPhaseField::AppPottsPhaseField(SPPARKS *spk, int narg, char **arg) :
     } else error->all(FLERR,"Illegal app_style potts/pfm command");
     iarg++;
   }
+=======
+  //set other default values
+  nlocal_app=0;
+  cnew=NULL;
+  pf_resetfield=false;
+  warn_concentration_deviation=0;
+  warn_concentration_deviation_all=0;
+  cmap_ready=false;
+  print_cmap=false;
+  enforceConcentrationLimits=false;
+  initialize_values=false;
+  dimension=0;
+  cmap=NULL;
+
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 }
 
 /* ---------------------------------------------------------------------- */
@@ -159,6 +223,7 @@ AppPottsPhaseField::~AppPottsPhaseField()
     memory->sfree(cmap);
 }
 
+<<<<<<< HEAD
 void AppPottsPhaseField::init_app()
 {
   // init the parent class first
@@ -176,6 +241,65 @@ void AppPottsPhaseField::init_app()
   // setup array for easy reset
 
   if (pf_resetfield) set_phasefield_resetfield();
+=======
+/* ---------------------------------------------------------------------- */
+
+void AppPottsPhaseField::input_app(char *command, int narg, char **arg)
+{
+
+  if (strcmp(command,"pottspf/command") == 0) {
+
+    if (narg != 2) error->all(FLERR,"Invalid command for app_style");
+
+    if (strcmp(arg[0],"reset_phasefield") == 0)
+      set_phasefield_resetfield(narg,arg);
+
+    else if (strcmp(arg[0],"print_connectivity") == 0) {
+      if (strcmp(arg[1],"yes") == 0) print_cmap=true;
+      else print_cmap=false;
+    }
+
+    else if (strcmp(arg[0],"initialize_values") == 0) {
+      if (strcmp(arg[1],"yes") == 0) initialize_values=true;
+      else initialize_values=false;
+    }
+
+    else if (strcmp(arg[0],"enforce_concentration_limits") == 0) {
+      if (strcmp(arg[1],"yes") == 0) {
+        enforceConcentrationLimits=true;
+        //since I'm forcing the concentration limits
+        //set the warn flags to 1 so that it doesn't check
+        warn_concentration_deviation=1;
+        warn_concentration_deviation_all=1;
+      }
+      else {
+        enforceConcentrationLimits=false;
+        //if someone turns this off reset the flags to check
+        // for concentration deviations
+        warn_concentration_deviation=0;
+        warn_concentration_deviation_all=0;
+      }
+    }
+    else
+      error->all(FLERR,"Invalid command for app_style");
+  }
+  else
+    error->all(FLERR,"Invalid command for app_style");
+}
+
+/* ---------------------------------------------------------------------- */
+
+void AppPottsPhaseField::init_app()
+{
+  //init the parent class first
+  AppPottsNeighOnly::init_app();
+
+  //setup the connectivity map
+  if (!cmap_ready) setup_connectivity_map();
+
+  //initialize values if command is called
+  if (initialize_values) init_values();
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 
 }
 
@@ -183,11 +307,18 @@ void AppPottsPhaseField::init_app()
 
 void AppPottsPhaseField::setup_end_app()
 {
+<<<<<<< HEAD
   // set the time step for phase field
 
   dt_phasefield = dt_rkmc / dt_phasefield_mult;
 
   // add code here at a later date to check the stability of the phase field
+=======
+  //set the time step for phase field
+  dt_phasefield = dt_rkmc / dt_phasefield_mult;
+
+  //add code here at a later date to check the stability of the phase field
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 }
 
 /* ----------------------------------------------------------------------
@@ -196,6 +327,7 @@ void AppPottsPhaseField::setup_end_app()
 
 void AppPottsPhaseField::grow_app()
 {
+<<<<<<< HEAD
   // set integer pointers
 
   spin = iarray[0];
@@ -212,6 +344,20 @@ void AppPottsPhaseField::grow_app()
 
   // grow cnew locally so it doesn't have to be communicated
 
+=======
+  //set integer pointers
+  spin = iarray[0];
+  phase = iarray[1];
+
+  //setup the initial phase values
+  for (int i=0; i<nlocal+nghost; i++)
+    set_site_phase(i);
+
+  //setup double pointers
+  c = darray[0];
+
+  //grow cnew locally so it doesn't have to be communicated
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   if (nlocal_app < nlocal) {
     nlocal_app = nlocal;
 
@@ -227,6 +373,7 @@ void AppPottsPhaseField::grow_app()
 void AppPottsPhaseField::site_event_finitedifference(int i)
 {
 
+<<<<<<< HEAD
   int j,jj;
 
   int ispin = spin[i];
@@ -240,6 +387,46 @@ void AppPottsPhaseField::site_event_finitedifference(int i)
     qBeta_sum[j]=0.0;
   }
 
+=======
+  // the following code will automatically perform 1-,2-, or 3-D
+  //finite difference, central in space and backward in time
+  int j;
+  double C = c[i];
+  double val=0.0;
+
+  //perform finite difference on all the cells in the list
+  //M*dt*del^2(chem_pot)
+  for (j=0; j<2*dimension; j++) {
+
+    //neighbor site
+    int s=neighbor[i][cmap[j]];
+
+    val += site_chem_pot(s);
+    }
+  val -= 2*dimension*site_chem_pot(i);
+
+  cnew[i] = C + (dt_phasefield * M_c) * val;
+
+  if (enforceConcentrationLimits) {
+    if (cnew[i] > 1.0) cnew[i]=1.0;
+    if (cnew[i] < 0.0) cnew[i]=0.0;
+  }
+
+  if (!warn_concentration_deviation && (cnew[i] > 1.0 || cnew[i] < 0.0))
+    warn_concentration_deviation=1;
+}
+
+/* ----------------------------------------------------------------------
+ compute chemical potential of site, dG/dc + kappaC*del^2(c)
+ ------------------------------------------------------------------------- */
+
+double AppPottsPhaseField::site_chem_pot(int i)
+{
+  int j;
+  double qi_alpha,qi_beta;
+  double del_sq_c = 0;
+
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   if (phase[i]==0) {
     qi_alpha=1.0;
     qi_beta=0.0;
@@ -249,6 +436,7 @@ void AppPottsPhaseField::site_event_finitedifference(int i)
     qi_beta=1.0;
   }
 
+<<<<<<< HEAD
   // set values used for convenience
 
   double factor = 4.0*gamma + 2.0*a_1*qi_alpha + 2.0*a_2*qi_beta;
@@ -328,6 +516,21 @@ void AppPottsPhaseField::site_event_finitedifference(int i)
 
   if (!warn_concentration_deviation && (cnew[i] > 1.0 || cnew[i] < 0.0))
     warn_concentration_deviation=1;
+=======
+  //Calculate dGdc.
+  double C=c[i];
+  double dGdc = 2.0*gamma*(C-c_1+C-c_2) + 2.0*a_1*qi_alpha*(C-c_3) + 2.0*a_2*qi_beta*(C-c_4);
+
+  // Calculate del^2(c) = c(i-1) - 2*c(i) + c(i+1)
+  for (j=0; j<2*dimension; j++) {
+
+    //neighbor
+    int s=neighbor[i][cmap[j]];
+    del_sq_c += c[s];
+  }
+  del_sq_c -= 2*dimension*c[i];
+  return dGdc - kappaC*del_sq_c;
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 }
 
 /* ----------------------------------------------------------------------
@@ -336,6 +539,7 @@ void AppPottsPhaseField::site_event_finitedifference(int i)
 
 double AppPottsPhaseField::site_energy(int i)
 {
+<<<<<<< HEAD
 
   // get the energy without the gradient term
 
@@ -350,6 +554,17 @@ double AppPottsPhaseField::site_energy(int i)
    for (int j=0; j<2*dimension; j++) {
 
      // site
+=======
+  //get the energy without the gradient term
+  double energy = site_energy_no_gradient(i);
+
+  //Add the gradient energy to obtain total energy, (del c)^2
+   double val=0.0;
+   //perform finite difference on all the cells in the list
+   for (int j=0; j<2*dimension; j++) {
+
+     //site
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
      int s=neighbor[i][cmap[j]];
 
      if (j%2==0)
@@ -375,15 +590,23 @@ double AppPottsPhaseField::site_energy_no_gradient(int i)
     if (isite != spin[neighbor[i][j]]) eng++;
 
 
+<<<<<<< HEAD
   // now add the energy from deltaF
 
+=======
+  // Now add the energy from deltaG
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   double energy = (double) eng;
   double C=c[i];
 
   energy+= (gamma)*( pow(C-c_1,2.0) + pow(c_2-C,2.0) );
+<<<<<<< HEAD
 
   // now add the energy from the alpha or beta phase
 
+=======
+  //now add the energy from the alpha or beta phase
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   if (phase[i]==0) {
     energy+= (a_1)*pow(C-c_3,2.0);
   } else {
@@ -453,12 +676,20 @@ void AppPottsPhaseField::site_event_rejection(int i, RandomPark *random)
  iterate through the phase field solution
  ------------------------------------------------------------------------- */
 
+<<<<<<< HEAD
 void AppPottsPhaseField::app_update(double stoptime)
 {
   double localtime=0.0;
 
   // communicate all sites to make sure it's up-to-date when it starts
 
+=======
+void AppPottsPhaseField::user_update(double stoptime)
+{
+  double localtime=0.0;
+
+  //communicate all sites to make sure it's up-to-date when it starts
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   timer->stamp();
   comm->all();
   timer->stamp(TIME_COMM);
@@ -466,6 +697,7 @@ void AppPottsPhaseField::app_update(double stoptime)
   int done = 0;
   while (!done) {
 
+<<<<<<< HEAD
     // iterate through all the sets
 
     for (int i=0; i<nlocal; i++)
@@ -478,18 +710,36 @@ void AppPottsPhaseField::app_update(double stoptime)
 
     // reset the certain values if appropriate
 
+=======
+    //iterate through all the sets
+    for (int i=0; i<nlocal; i++)
+      site_event_finitedifference(i);
+
+    //copy updated phase field into old concentration field
+    for (int i=0; i<nlocal; i++)
+      c[i]=cnew[i];
+
+    //reset the certain values if appropriate
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
     if (pf_resetfield) {
       for (int i=0; i < pf_nresetlist; i++)
         c[pf_resetlist[i]]=pf_resetlistvals[i];
     }
     timer->stamp(TIME_SOLVE);
 
+<<<<<<< HEAD
     // re-sync all the data
 
     comm->all();
 
     // check for concentration devation warnings
 
+=======
+    //re-sync all the data
+    comm->all();
+
+    //check for concentration devation warnings
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
     if (!warn_concentration_deviation_all) {
       MPI_Allreduce(&warn_concentration_deviation,
                     &warn_concentration_deviation_all,1,
@@ -504,6 +754,7 @@ void AppPottsPhaseField::app_update(double stoptime)
 
     timer->stamp(TIME_COMM);
 
+<<<<<<< HEAD
     // increment time and determine when to finish
 
     localtime += dt_phasefield;
@@ -511,6 +762,13 @@ void AppPottsPhaseField::app_update(double stoptime)
 
     // throw exception when PF has iterated too far
 
+=======
+    //increment time and determine when to finish
+    localtime += dt_phasefield;
+    if (localtime >= (stoptime- 1e-6)) done = 1;
+
+    //throw exception when PF has iterated too far
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
     if (localtime > (stoptime + 1e-6)) {
       char errorstr[80];
       sprintf(errorstr,
@@ -527,6 +785,7 @@ void AppPottsPhaseField::setup_connectivity_map()
 {
   int i,j;
 
+<<<<<<< HEAD
   // this check is redundant but I'm leaving it anyway
 
   if (domain->lattice->nbasis > 1)
@@ -535,6 +794,14 @@ void AppPottsPhaseField::setup_connectivity_map()
 
   // set the dimension variable
 
+=======
+  //this check is redundant but I'm leaving it anyway
+  if (domain->lattice->nbasis > 1)
+    error->all(FLERR,
+      "only single basis units are allowed for app_style potts/phasefield");
+
+  //set the dimension variable
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   dimension = domain->dimension;
 
   if (!cmap)
@@ -542,6 +809,7 @@ void AppPottsPhaseField::setup_connectivity_map()
       memory->smalloc(2*dimension*sizeof(int),"app_potts_pf:cmap");
 
 
+<<<<<<< HEAD
   // setup the connectivity map for the appropriate style
 
   int style=domain->lattice->style;
@@ -586,6 +854,51 @@ void AppPottsPhaseField::setup_connectivity_map()
   // connectivity map defined above should not change unless
   // create_sites changes. However, the following is an error check
   // to ensure that the connectivity map is correct.
+=======
+  //setup the connectivity map for the appropriate style
+  int style=domain->lattice->style;
+
+  if (style == LINE_2N) {
+    cmap[0]=0;// x-1
+    cmap[1]=1;// x+1
+  }
+  else if (style == SQ_4N) {
+    cmap[0]=0;// x-1
+    cmap[1]=3;// x+1
+    cmap[2]=1;// y-1
+    cmap[3]=2;// y+1
+  }
+  else if (style == SQ_8N) {
+    cmap[0]=1;// x-1
+    cmap[1]=6;// x+1
+    cmap[2]=3;// y-1
+    cmap[3]=4;// y+1
+  }
+
+  else if (style == SC_6N){
+    cmap[0]=0;// x-1
+    cmap[1]=5;// x+1
+    cmap[2]=1;// y-1
+    cmap[3]=4;// y+1
+    cmap[4]=2;// z-1
+    cmap[5]=3;// z+1
+  }
+  else if (style == SC_26N) {
+    cmap[0]=4; // x-1
+    cmap[1]=21;// x+1
+    cmap[2]=10;// y-1
+    cmap[3]=15;// y+1
+    cmap[4]=12;// z-1
+    cmap[5]=13;// z+1
+  }
+  else
+    error->all(FLERR,
+      "Lattice style not compatible with app_style potts/phasefield");
+
+  //The connectivity map defined above should not change unless
+  //create_sites changes. However, the following is an error check
+  //to ensure that the connectivity map is correct.
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 
   double lim[3][2];
   lim[0][0]=domain->boxxlo;
@@ -610,10 +923,16 @@ void AppPottsPhaseField::setup_connectivity_map()
 
   if (id==-1)
     error->all(FLERR,
+<<<<<<< HEAD
       "Error checking connectivity map for app_style potts/pfm");
 
   // now check the ith site because it's not on any of the boundaries
 
+=======
+      "Error checking connectivity map for app_style potts/phasefield");
+
+  //now check the ith site because it's not on any of the boundaries
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   double pos;
   for (i=0; i<dimension; i++) {
     for (j=0; j<2; j++) {
@@ -625,15 +944,23 @@ void AppPottsPhaseField::setup_connectivity_map()
       if (pos != xyz[s][i]) {
         print_connectivity_map();
         error->all(FLERR,
+<<<<<<< HEAD
           "Invalid connectivity map for app_style potts/pfm");
+=======
+          "Invalid connectivity map for app_style potts/phasefield");
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
       }
     }
   }
 
   cmap_ready=true;
 
+<<<<<<< HEAD
   // print the connectivity map if it has been asked for
 
+=======
+  //print the connectivity map if it has been asked for
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   if (cmap_ready && print_cmap && me==0) print_connectivity_map();
 }
 
@@ -655,8 +982,12 @@ void AppPottsPhaseField::print_connectivity_map()
     sprintf(strptr,"  +/-     x     y     z\n");
   strptr += strlen(strptr);
 
+<<<<<<< HEAD
   // cycle through the appropriate dimensions
 
+=======
+  //cycle through the appropriate dimensions
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   for (j=0; j<2; j++) {
     if (j==0)
       sprintf(strptr,"    -");
@@ -674,10 +1005,17 @@ void AppPottsPhaseField::print_connectivity_map()
 
   if (screen)
     fprintf(screen,
+<<<<<<< HEAD
             "Connectivity map for app_style: potts/pfm\n%s\n",str);
   if (logfile)
     fprintf(logfile,
             "Connectivity map for app_style: potts/pfm\n%s\n",str);
+=======
+            "Connectivity map for app_style: potts/phasefield\n%s\n",str);
+  if (logfile)
+    fprintf(logfile,
+            "Connectivity map for app_style: potts/phasefield\n%s\n",str);
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 }
 
 /* ---------------------------------------------------------------------- */
@@ -685,13 +1023,20 @@ void AppPottsPhaseField::print_connectivity_map()
 void AppPottsPhaseField::set_site_phase(int i)
 {
   if ( (spin[i] - phaseChangeInt) > 0 )
+<<<<<<< HEAD
     phase[i]=0; // Alpha
   else
     phase[i]=1; // Beta
+=======
+    phase[i]=0;//Alpha
+  else
+    phase[i]=1;//Beta
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 }
 
 /* ---------------------------------------------------------------------- */
 
+<<<<<<< HEAD
 void AppPottsPhaseField::set_phasefield_resetfield()
 {
 
@@ -726,6 +1071,47 @@ void AppPottsPhaseField::set_phasefield_resetfield()
   }
   if (counter != pf_nresetlist)
     error->all(FLERR,"Problem setting up pfsolver reset field lists");
+=======
+void AppPottsPhaseField::set_phasefield_resetfield(int narg, char **arg)
+{
+  if (narg != 2) error->all(FLERR,"Illegal pottspf/command reset_phasefield");
+  if (strcmp(arg[1],"yes") == 0)
+    pf_resetfield = true;
+  else if (strcmp(arg[1],"no") == 0) //redundant but allows error catching
+    pf_resetfield = false;
+  else
+    error->all(FLERR,"Illegal pottspf/command reset_phasefield - yes/no");
+
+  //setup array for easy reset
+  if (pf_resetfield) {
+    //get the count
+    pf_nresetlist=0;
+    for (int i=0;i<nlocal;i++)
+      if ( ( xyz[i][0] <= domain->boxxlo ) ||
+           ( xyz[i][0] >= (domain->boxxhi - 1) ) )
+        pf_nresetlist++;
+
+    //setup lists
+    pf_resetlist = (int *) memory->smalloc(
+        pf_nresetlist*sizeof(int),"app_potts_pf:pf_resetlist");
+    pf_resetlistvals = (double *) memory->smalloc(
+        pf_nresetlist*sizeof(double),"app_potts_pf:pf_resetlistvals");
+
+    //set values in the list
+    int counter=0;
+    for (int i=0;i<nlocal;i++) {
+      if ( xyz[i][0] <= domain->boxxlo ) {
+        pf_resetlist[counter]=i;
+        pf_resetlistvals[counter++]=0.0;
+      } else if ( xyz[i][0] >= (domain->boxxhi - 1) ) {
+        pf_resetlist[counter]=i;
+        pf_resetlistvals[counter++]=1.0;
+      }
+    }
+    if (counter != pf_nresetlist)
+      error->all(FLERR,"Problem setting up pfsolver reset field lists");
+  }
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 }
 
 /* ---------------------------------------------------------------------- */
@@ -734,14 +1120,22 @@ void AppPottsPhaseField::init_values()
 {
   double q_alpha,q_beta,cAlpha,cBeta;
 
+<<<<<<< HEAD
   // phase=0 - alpha (a_1,c_3)
 
+=======
+  //phase=0 - alpha (a_1,c_3)
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   q_alpha = 1.0; q_beta = 0.0;
   cAlpha=(gamma * (c_1 + c_2) + a_1*c_3*q_alpha + a_2*c_4*q_beta )
     / (2.0*gamma + a_1*q_alpha + a_2*q_beta);
 
+<<<<<<< HEAD
   // phase=1 - beta  (a_2,c_4)
 
+=======
+  //phase=1 - beta  (a_2,c_4)
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   q_alpha = 0.0; q_beta = 1.0;
   cBeta =(gamma * (c_1 + c_2) + a_1*c_3*q_alpha + a_2*c_4*q_beta )
     / (2.0*gamma + a_1*q_alpha + a_2*q_beta);
@@ -753,8 +1147,12 @@ void AppPottsPhaseField::init_values()
     else
       c[i] = cBeta;
   }
+<<<<<<< HEAD
 
   // ensure this doesn't get called again
 
   initialize_values=false;
+=======
+  initialize_values=false;//ensure this doesn't get called again
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 }

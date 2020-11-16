@@ -44,7 +44,11 @@ AppPottsPhaseFieldMarmot::AppPottsPhaseFieldMarmot(SPPARKS *spk, int narg, char 
   ndouble = 1;
   allow_kmc = 0;
   allow_rejection = 1;
+<<<<<<< HEAD
   allow_app_update = 1;
+=======
+  allow_update = 1;
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   allow_masking = 0;
   numrandom = 2;
   delpropensity = 2;//need full neighbor lists of the 1st layer ghost sites

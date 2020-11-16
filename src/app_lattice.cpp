@@ -81,9 +81,15 @@ AppLattice::AppLattice(SPPARKS *spk, int narg, char **arg) : App(spk,narg,arg)
   dt_sweep = 0.0;
   naccept = nattempt = 0;
   nsweeps = 0;
+<<<<<<< HEAD
 
   app_update_only = 0;
   reaction_flag = ballistic_flag = time_flag = 0; //yongfeng
+=======
+  
+  update_only = 0;
+  reaction_flag = ballistic_flag = time_flag = 0; //yongfeng  
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 }
 
 /* ---------------------------------------------------------------------- */
@@ -343,7 +349,11 @@ void AppLattice::setup()
     }
   }
 
+<<<<<<< HEAD
   // check reaction before simulation, yongfeng
+=======
+  // check reaction before simulation, yongfeng  
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
   if(reaction_flag)  check_reaction();
 
   // convert per-sector time increment info to KMC params
@@ -486,15 +496,25 @@ void AppLattice::iterate_kmc_global(double stoptime)
 
     if (isite >= 0) {
       time += dt_step;
+<<<<<<< HEAD
       if (time_flag) { //yongfeng
          time_tracer(dt_step);
+=======
+      if (time_flag) { //yongfeng 
+         time_tracer(dt_step); 
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
          realtime += dt_step*real_time(time);
       }
       if (time <= stoptime) {
 	site_event(isite,ranapp);
 	naccept++;
+<<<<<<< HEAD
         if (reaction_flag) check_reaction(); //yongfeng
         if (concentrationflag) concentration_field(); //yongfeng
+=======
+        if (reaction_flag) check_reaction(); //yongfeng 
+        if (concentrationflag) concentration_field(); //yongfeng 
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 	timer->stamp(TIME_APP);
       } else {
 	done = 1;
@@ -585,13 +605,21 @@ void AppLattice::iterate_kmc_sector(double stoptime)
 	timer->stamp();
 	isite = solve->event(&dt);
 	timer->stamp(TIME_SOLVE);
+<<<<<<< HEAD
 
+=======
+	
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 	if (isite < 0 || site2i[isite] < 0) done = 1;  // site2i[isite]
 	else {
 	  timesector += dt;
 	  if (timesector >= dt_kmc) done = 1;
 	  else {
+<<<<<<< HEAD
             if(time_flag) time_tracer(dt); //yongfeng, pass dt to app_rpv
+=======
+            if(time_flag) time_tracer(dt); //yongfeng, pass dt to app_rpv  
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 	    site_event(site2i[isite],ranapp);
 	    naccept++;
 	  }
@@ -611,6 +639,7 @@ void AppLattice::iterate_kmc_sector(double stoptime)
 
     nsweeps++;
     time += dt_kmc;
+<<<<<<< HEAD
 
     if (time_flag)
       realtime += dt_kmc / nprocs * real_time(time);
@@ -619,6 +648,16 @@ void AppLattice::iterate_kmc_sector(double stoptime)
     if (ballistic_flag) check_ballistic(time); //yongfeng
     if (concentrationflag) concentration_field(); //yongfeng
 
+=======
+    
+    if (time_flag)
+      realtime += dt_kmc / nprocs * real_time(time);
+          
+    if (reaction_flag) check_reaction(); //yongfeng
+    if (ballistic_flag) check_ballistic(time); //yongfeng
+    if (concentrationflag) concentration_field(); //yongfeng  
+    
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
     if (time >= stoptime) alldone = 1;
     if (alldone || time >= nextoutput)
       nextoutput = output->compute(time,alldone);

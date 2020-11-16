@@ -1045,7 +1045,11 @@ void Image::compute_SSAO()
 
 /* ---------------------------------------------------------------------- */
 
+<<<<<<< HEAD
 void Image::write_JPG(FILE * fp)
+=======
+void Image::write_JPG(FILE * /*fp*/)
+>>>>>>> 08bc9144d3395973ef1d38e734456881b91eacd7
 {
 #ifdef SPPARKS_JPEG
   struct jpeg_compress_struct cinfo;
