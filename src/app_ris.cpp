@@ -47,7 +47,7 @@ AppRis::AppRis(SPPARKS *spk, int narg, char **arg) :
   allow_kmc = 1;
   allow_rejection = 0;
 
-  engstyle = 1; //1 for 1NN interaction, 2 for 2NN interaction; default 1
+  engstyle = 0; //1 for 1NN interaction, 2 for 2NN interaction; default 0 (no energy calculation)
   diffusionflag = 0; //flag for MSD calculations, 1 for yes, 0 for no; default 0
   concentrationflag = 0; //flag for concentration calculation
   ris_flag = 0; 
@@ -465,6 +465,7 @@ void AppRis::input_app(char *command, int narg, char **arg)
     double dose_rate = atof(arg[0]);// dose rate
     fpdistance = 0.0;  
     if(narg > 1) fpdistance = atof(arg[1]);// Frenkel pair separation
+    fpdistance *=fpdistance;
 
     fpfreq = 1e12/nlocal/dose_rate; // time interval to introduce an FP
     if(min_fpfreq > fpfreq) min_fpfreq = fpfreq;
@@ -473,16 +474,15 @@ void AppRis::input_app(char *command, int narg, char **arg)
   // ballistic mixing   
   else if (strcmp(command, "ballistic") ==0) {
 
-    if(narg < 1) error->all(FLERR,"illegal ballistic command");
+    if(narg < 2) error->all(FLERR,"illegal ballistic command");
     ballistic_flag = 1;
     grow_ballistic();
 
     double mix_rate = atof(arg[0]);// mixing rate (in unit of dpa/s) 
     bdistance = 0.0;  
-    if(narg > 1) bdistance = atof(arg[1]);// mixing range
+    bdistance = atof(arg[1]);// mixing range
 
     bfreq[nballistic] = 1e12/nlocal/mix_rate; // time interval for mixing 
-    bdistance = bdistance; // second order
     if(min_bfreq > bfreq[nballistic]) min_bfreq = bfreq[nballistic];
     nballistic ++; // number of mixing events
   }
@@ -790,7 +790,6 @@ double AppRis::sites_energy(int i, int estyle)
 double AppRis::site_concentration(int i, int estyle)
 { 
   double ci = 0.0;
-  return 1.0; 
   int n1nn = numneigh[i]; //num of 1NN
   
   for(int j = 0; j < n1nn; j++) { 
@@ -950,10 +949,8 @@ double AppRis::site_propensity(int i)
         deltaE += sites_energy(i,engstyle);  //site energy after reaction
         element[i] = ei;
 
-	//ebarrier = delta_mu - delta_E
-        ebarrier = -rbarrier[j] + deltaE;
+        ebarrier = rbarrier[j] + deltaE;
         hpropensity = rrate[j] * exp(-ebarrier/KBT);
-        //fprintf(screen,"barrier %d %d %f %f %f \n",ei,jid,ebarrier,deltaE,rbarrier[j]);
         add_event(i,jid,2,j,hpropensity);
         prob_reaction += hpropensity;
       }
@@ -1088,8 +1085,8 @@ void AppRis::site_event(int i, class RandomPark *random)
 
     // update reaction target number
     for(ii = 0; ii < nreaction; ii++) {
-      if(routput[ii] != j) continue;
-      target_local[ii] --;
+      if(routput[ii] == k) target_local[ii] ++;
+      if(routput[ii] == j) target_local[ii] --;
     }
   }
 
@@ -1122,16 +1119,21 @@ void AppRis::site_event(int i, class RandomPark *random)
   update_propensity(i);
   if(rstyle == 1 || rstyle == 3 || rstyle == 4) update_propensity(j);
 
-  // check if any active reactions needs to be disabled
+  // check if any reactions needs to be disabled or enabled
   if(reaction_flag == 1) {
     for(ii = 0; ii < nreaction; ii ++) {
       if(target_local[ii] <= 0 && renable[ii] == 1) {
         renable[ii] = 0;
         reset_propensity();
-        return;
+      }
+      if(target_local[ii] > 0 && renable[ii] == 0) {
+        renable[ii] = 1;
+        reset_propensity();
       }
     }
   }
+
+  return;
 }
 
 /* ----------------------------------------------------------------------
@@ -1484,17 +1486,16 @@ void AppRis::frenkelpair()
   
   //return; // spk_v no interstitial creation for test 
   //create an interstitial
-  double dr = fpdistance;  
   int findi = 1; 
   while (findi) { 
     int id = static_cast<int> (nlocal*ranris->uniform());
 
     if(id < nlocal && element[id] < VACANCY) {
-      if(fpdistance = 0.0) {// why this condition? double check later  
+      if(fpdistance = 0.0) {// no requirement on fp distance   
 	findi = 0;
       } else {
         double dij = distanceIJ(vid,id);
-        if(dij <= 3.0) { 
+        if(dij <= fpdistance) { 
 	  findi = 0;
 	  iid = id;
 	}
@@ -1570,7 +1571,7 @@ void AppRis::ballistic(int i)
     if(id < nlocal && element[id] < VACANCY) {
         double dij = distanceIJ(iid,id);
 	double mixprobability = exp(-dij/bdistance);
-        if(ranris->uniform() <= bdistance) { 
+        if(ranris->uniform() <= mixprobability) { 
 	  findj = 0;
 	  jid = id;
 	} 
@@ -1697,6 +1698,7 @@ void AppRis::absorption(int i)
   if (reaction_flag == 1) {
      for(int ii = 0; ii < nreaction; ii++) {
         if(routput[ii] == k) target_local[ii] ++;
+        if(routput[ii] == element[i]) target_local[ii] --;
      }
   }
 
