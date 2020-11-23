@@ -19,7 +19,8 @@
  * 2. Correct diffusion calculation 
  * 3. Add corrections to energy and barrier for different interstitials 
  * 4. Enable ct_site calculation to show the spacial distribution of concentrations 
- * 5. Add full references to models 
+ * 5. Add full references to models
+ * 6. Update reaction  
 */ 
 
 
@@ -60,6 +61,7 @@ AppSeg::AppSeg(SPPARKS *spk, int narg, char **arg) :
   diffusionflag = 0; //flag for MSD calculations, 1 for yes, 0 for no; default 0
   concentrationflag = 0; //flag for concentration calculation
   seg_flag = 0; 
+  eisink_flag = 0;
 
   if (narg < 1) error->all(FLERR,"Illegal app_style command");
   if (narg >= 2) engstyle = atoi(arg[1]);
@@ -457,8 +459,14 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     if(narg < 1) error->all(FLERR,"illegal frenkelpair command");
 
     double dose_rate = atof(arg[0]);// dose rate
-    fpdistance = 0.0;  
-    if(narg > 1) fpdistance = atof(arg[1]);// Frenkel pair separation
+    fpdistance = 0.0;
+    nself_ion = 0;
+    self_ion_ratio = 0.0;
+    if(narg == 2) fpdistance = atof(arg[1]);// Frenkel pair separation
+    if(narg == 4) {
+	    self_ion_ratio = atof(arg[2]);// self-ion versus dpa 
+	    self_ion_type = atof(arg[3]);// self-ion type 
+    }
     //fpdistance *= fpdistance;
 
     fpfreq = 1e12/nlocal/dose_rate; // time interval to introduce an FP
@@ -1547,6 +1555,45 @@ void AppSeg::frenkelpair()
     }
   }
 
+  // no self_ions need to be added 
+  if(ranseg->uniform() >= self_ion_ratio) return;
+
+  // add self-ion
+  int findion = 1; 
+  int ionelement = -1;
+  while (findion) { 
+    id = static_cast<int> (nlocal*ranseg->uniform());
+  
+    if(id < nlocal && element[id] > INT) {
+      nself_ion ++;
+      findion = 0;
+      ionelement = element[id];
+      element[id] = INT;
+      dmb1[id] = self_ion_type;
+      dmb2[id] = ionelement;
+      nsites_local[ionelement] --; // site element number -1 
+      nsites_local[INT] ++;
+      update_propensity(id); 
+    }
+  } 
+
+  //check if any reactions need to be activated or deactivated 
+  if(reaction_flag == 1) {
+    for(int ii = 0; ii < nreaction; ii ++) {
+      if(target_local[ii] == INT) target_local[ii] --; 
+      if(target_local[ii] == ionelement) target_local[ii] ++; 
+
+      if(target_local[ii] <= 0 && renable[ii] == 1) {
+        renable[ii] = 0;
+        reset_propensity();
+      }
+      if(target_local[ii] > 0 && renable[ii] == 0) {
+        renable[ii] = 1;
+        reset_propensity();
+      }
+    }
+  }
+
   return;
 }
 
@@ -1672,6 +1719,8 @@ void AppSeg::absorption(int i)
   int j,k,m,n,ei,ejd,ntotal;
   double ctotal,cr[10]; 
 
+  ntotal = 0;
+  ctotal = 0.0;
   ei = element[i];
   ejd = -1;
   n = isink[i];

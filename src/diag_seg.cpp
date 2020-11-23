@@ -29,7 +29,7 @@ enum{inter,floater};                              		// data type
 enum{VAC=0,INT,CE1,CE2,CE3,CE4,CE5,CE6,CE7,CE8};   		// CE: chemical element 
 enum{hVAC=10,hINT,hCE1,hCE2,hCE3,hCE4,hCE5,hCE6,hCE7,hCE8}; 	// hop steps for each element
 enum{sink=20};                                    		// number of sink absorption   
-enum{recombine=30,FPair,vabsorb,iabsorb};         		// number of recombination, all integers till here    
+enum{recombine=30,FPair,selfion,vabsorb,iabsorb};         		// number of recombination, all integers till here    
 enum{cVAC=40,cINT,cCE1,cCE2,cCE3,cCE4,cCE5,cCE6,cCE7,cCE8}; 	// time averaged concentration
 enum{dVAC=50,dINT,dCE1,dCE2,dCE3,dCE4,dCE5,dCE6,dCE7,dCE8}; 	// MSD
 enum{energy=60,treal,fvt};                        		// energy and realistic time  
@@ -157,8 +157,9 @@ void DiagSeg::init()
     else if (strcmp(list[i],"fvt") == 0) which[i] = fvt;
    */
 
-    else if (strcmp(list[i],"nfp") == 0) which[i] = FPair;
     else if (strcmp(list[i],"recombine") == 0) which[i] = recombine;
+    else if (strcmp(list[i],"nfp") == 0) which[i] = FPair;
+    else if (strcmp(list[i],"selfion") == 0) which[i] = selfion;
     else if (strcmp(list[i],"vabsorb") == 0) which[i] = vabsorb;
     else if (strcmp(list[i],"iabsorb") == 0) which[i] = iabsorb;
     else if (strcmp(list[i],"energy") == 0) which[i] = energy;
@@ -290,6 +291,7 @@ void DiagSeg::compute()
     else if (which[i] == energy) dvalue = appseg->total_energy(); //system energy 
     else if (which[i] > sink && which[i] < recombine)  ivalue = 0; //to be added later 
     else if (which[i] == FPair) ivalue = appseg->nFPair; //number of reocmbination 
+    else if (which[i] == selfion) ivalue = appseg->nself_ion; //number of selfionn
     else if (which[i] == recombine) ivalue = appseg->nrecombine[VAC]; //number of reocmbination
     else if (which[i] == vabsorb) {
       int nabsorb = 0;

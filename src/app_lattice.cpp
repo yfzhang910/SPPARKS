@@ -83,7 +83,7 @@ AppLattice::AppLattice(SPPARKS *spk, int narg, char **arg) : App(spk,narg,arg)
   nsweeps = 0;
 
   app_update_only = 0;
-  reaction_flag = ballistic_flag = frenkelpair_flag = time_flag = sinkmotion_flag = 0; //yongfeng
+  reaction_flag = ballistic_flag = frenkelpair_flag = time_flag = sinkmotion_flag = clst_flag = concentrationflag = 0; //yongfeng
 }
 
 /* ---------------------------------------------------------------------- */
@@ -468,7 +468,7 @@ void AppLattice::iterate()
 
 void AppLattice::iterate_kmc_global(double stoptime)
 {
-  int isite;
+  int isite = -1;
 
   // global KMC runs with one set
   // save ptr to system solver
@@ -486,7 +486,6 @@ void AppLattice::iterate_kmc_global(double stoptime)
 
     if(ballistic_flag && dt_step > min_bfreq) dt_step = min_bfreq; //Yongfeng, double check later!!! 
     if(frenkelpair_flag && dt_step > min_fpfreq) dt_step = min_fpfreq; //Yongfeng, double check later!!!
-   // fprintf(screen,"dt_step, %d %f %f \n",isite, dt_step, min_bfreq); 
     if (isite >= 0) {
       time += dt_step;
       if (concentrationflag) concentration_field(dt_step); //yongfeng, integrate concentration every step 

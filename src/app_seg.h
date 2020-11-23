@@ -98,8 +98,8 @@ class AppSeg : public AppLattice {
   double bdistance;
 
 //parameter for frenkel pair generation 
-  int nfp,fp_old,fp_new;
-  double fpfreq,fpdistance;
+  int nfp,fp_old,fp_new,nself_ion,self_ion_type;
+  double fpfreq,fpdistance,self_ion_ratio;
 
 //parameter for time averaged concentration  
   double *ct,*ct_new,dt_new;
