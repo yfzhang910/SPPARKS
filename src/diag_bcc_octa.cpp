@@ -31,7 +31,7 @@ enum{hFE=11,hVAC,hHE,hVO,hI1,hI2,hI3,hI4,hI5,hI6};               // hop steps fo
 enum{react=20};                                 //reactions 
 enum{sink=30};                                    // number of sink absorption   
 enum{RcFe=41,RcVAC,RcHE,RcVO,RcI1,RcI2,RcI3,RcI4,RcI5,RcI6};                               // number of recombination    
-enum{FPair=51,nclst};                             // Frenkle Pairs created by ballistic  
+enum{FPair=51,nclst,nvhop};                             // Frenkle Pairs created by ballistic  
 enum{dFE=61,dVAC,dHE,dVO,dI1,dI2,dI3,dI4,dI5,dI6}; // MSD for each element 
 enum{energy=71,rclst,csia};                        // energy and realistic time  
 /* ---------------------------------------------------------------------- */
@@ -133,6 +133,7 @@ void DiagBccOcta::init()
     else if (strcmp(list[i],"nfp") == 0) which[i] = FPair;
     else if (strcmp(list[i],"nclst") == 0) which[i] = nclst; 
     else if (strcmp(list[i],"rclst") == 0) which[i] = rclst; 
+    else if (strcmp(list[i],"nvhop") == 0) which[i] = nvhop; 
     else if (strcmp(list[i],"csia") == 0) which[i] = csia; 
 
     else if (list[i][0] == 'r' && list[i][1] == 'e' && list[i][2] == 'c' && list[i][3] == 't') {
@@ -242,6 +243,7 @@ void DiagBccOcta::compute()
     else if (which[i] == nclst) ivalue = appbccocta->ncluster; //# of cluster
     else if (which[i] == rclst) dvalue = appbccocta->rcluster; //size of cluster 
     else if (which[i] == csia) dvalue = appbccocta->csia; //sia concentration
+    else if (which[i] == nvhop) dvalue = appbccocta->nvhop; //sia concentration
    
     else if (which[i] > react && which[i] < sink) {
       int id = which[i] - react; 

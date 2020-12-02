@@ -472,6 +472,7 @@ void AppBccOcta::init_app()
   // create pre-existing voids 
   if(nvoid > 0) prevoid();
 
+  nvhop = 0; 
 }
 
 /* ---------------------------------------------------------------------- */

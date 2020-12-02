@@ -45,7 +45,8 @@ class AppBccOcta : public AppLattice {
 
   int *esites;
   int *echeck;
- 
+
+  int nvhop; // total vacancy hops 
   int *numneigh2,*numneigh3,*numneigh4; // number of 2NN and 3NN
   int **neighbor2,**neighbor3,**neighbor4; // index of 2NN and 3NN
   int ****ibox;//used for defining recombination radius
