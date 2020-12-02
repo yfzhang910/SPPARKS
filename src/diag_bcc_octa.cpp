@@ -243,7 +243,7 @@ void DiagBccOcta::compute()
     else if (which[i] == nclst) ivalue = appbccocta->ncluster; //# of cluster
     else if (which[i] == rclst) dvalue = appbccocta->rcluster; //size of cluster 
     else if (which[i] == csia) dvalue = appbccocta->csia; //sia concentration
-    else if (which[i] == nvhop) dvalue = appbccocta->nvhop; //sia concentration
+    else if (which[i] == nvhop) ivalue = appbccocta->nvhop; //sia concentration
    
     else if (which[i] > react && which[i] < sink) {
       int id = which[i] - react; 

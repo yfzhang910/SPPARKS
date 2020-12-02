@@ -960,6 +960,7 @@ void AppBccOcta::site_event(int i, class RandomPark *random)
   if(rstyle == 1) { 
     k = element[i];
     jd = element[j];
+    if(k == VACANCY) nvhop++;
 
     if(k == HE && jd == VACANCY) {// He becomes substitution 
       hcount[i] = 0; // reset due to the reaction of He + V = SB 
