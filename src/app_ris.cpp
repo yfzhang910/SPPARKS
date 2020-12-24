@@ -10,7 +10,7 @@
 
    See the README file in the top-level SPPARKS directory.
 *************************************************************************************
-   This application does radiation segregation simulations based on Soisson 2006. 
+   This application does radiation segregation simulations based on Soisson 2006.
    Contributer: Yongfeng Zhang, yongfeng.zhang@inl.gov, yzhang2446@wisc.edu
 ------------------------------------------------------------------------- */
 
@@ -28,19 +28,19 @@
 
 using namespace SPPARKS_NS;
 
-enum{NOOP,BCC,NBCC};                          // all sites are on lattice, specicial site types (e.g., sinks) can be added  
+enum{NOOP,BCC,NBCC};                          // all sites are on lattice, specicial site types (e.g., sinks) can be added
 enum{FE=0,CU,NI,VACANCY,I1,I2,I3,I4,I5,I6};   // same as DiagRpv; element. I1: FeFe; I2: FeCu; I3: FeNi; I4: CuCu; I5: CuNi; I6: NiNi
 
 #define DELTAEVENT 100000
 #define MAX2NN 6 // max # of 2NN for both FCC and BCC lattice
-#define BIGNUMBER 1e18 // define a big number 
+#define BIGNUMBER 1e18 // define a big number
 
 /* ---------------------------------------------------------------------- */
 
 AppRis::AppRis(SPPARKS *spk, int narg, char **arg) :
   AppLattice(spk,narg,arg)
 {
-  ninteger = 2; // first for lattice type,second for element, 3rd for SIA type 
+  ninteger = 2; // first for lattice type,second for element, 3rd for SIA type
   ndouble = 0;
   delpropensity = 2;
   delevent = 1;
@@ -50,14 +50,14 @@ AppRis::AppRis(SPPARKS *spk, int narg, char **arg) :
   engstyle = 0; //1 for 1NN interaction, 2 for 2NN interaction; default 0 (no energy calculation)
   diffusionflag = 0; //flag for MSD calculations, 1 for yes, 0 for no; default 0
   concentrationflag = 0; //flag for concentration calculation
-  ris_flag = 0; 
+  ris_flag = 0;
 
   if (narg < 1) error->all(FLERR,"Illegal app_style command");
   if (narg >= 2) engstyle = atoi(arg[1]);
   if (engstyle == 2) delpropensity += 1;// increase delpropensity for 2NN interaction
   if (narg >= 3) concentrationflag = atoi(arg[2]);
   if (narg >= 4) diffusionflag = atoi(arg[3]);
-  // calculate concentration fiels for each elements, so that concentrationflag = nelement 
+  // calculate concentration fiels for each elements, so that concentrationflag = nelement
   // if (concentrationflag) {ndouble += concentrationflag;}
   // ndiffusion = diffusionflag;
   // darray 1-4 for msd if activated, followed by concentrations, needs the initial atomic id, aid
@@ -84,7 +84,7 @@ AppRis::AppRis(SPPARKS *spk, int narg, char **arg) :
   hcount = NULL; //numner of vacancy switch events
   nn1flag = nn2flag = barrierflag = time_flag = 0; //flags for bond energy and migration barriers
 
-  // flags and parameters for sinks, dislocations, reactions 
+  // flags and parameters for sinks, dislocations, reactions
   sink_flag = elastic_flag = moduli_flag = dislocation_flag = reaction_flag = acceleration_flag = 0; //flags for sink dislocation and vacancy
   nsink = ndislocation = nreaction = nballistic = ntrap = 0;
 
@@ -94,7 +94,7 @@ AppRis::AppRis(SPPARKS *spk, int narg, char **arg) :
   dislocation_radius = NULL;
 
   // arrays for sinks
-  isink = sink_shape = sink_normal = sink_segment = NULL; 
+  isink = sink_shape = sink_normal = sink_segment = NULL;
   sink_range = sink_radius = ci = sink_dr = sink_dt = sink_dt_new = sink_dt_old =  NULL;
   xsink = sink_mfp = NULL;
   nabsorption = nreserve = NULL;
@@ -118,11 +118,11 @@ AppRis::AppRis(SPPARKS *spk, int narg, char **arg) :
   numneigh2 = NULL;
   neighbor2 = NULL;
 
-  // ris 
+  // ris
   ris_type = NULL;
   ris_ci = ris_total = NULL;
 
-  // short range order 
+  // short range order
   total_neighbor = NULL;
   sro = NULL;
 }
@@ -215,13 +215,13 @@ void AppRis::input_app(char *command, int narg, char **arg)
     nelement = atoi(arg[0]);   // num of elements
 
     memory->create(nsites_local,nelement,"app/ris:nsites_local");
-    memory->create(total_neighbor,nelement,"app/ris:total_neighbor"); //total number of neighbors of all type i atoms 
+    memory->create(total_neighbor,nelement,"app/ris:total_neighbor"); //total number of neighbors of all type i atoms
     memory->create(sro,nelement,nelement,"app/ris:sro"); //short range order matrix
-    memory->create(ci,nelement,"app/ris:ci"); //static concentration based on current configuration 
-    memory->create(ct,nelement,"app/ris:ct"); //time averaged concentration 
-    memory->create(ct_new,nelement,"app/ris:ct_new"); //time averaged concentration 
-    memory->create(ebond1,nelement,nelement,"app/ris:ebond1"); // 1NN bond energy 
-    if(diffusionflag) memory->create(Lij,nelement,nelement,"app/ris:Lij"); //Onsager coefficient 
+    memory->create(ci,nelement,"app/ris:ci"); //static concentration based on current configuration
+    memory->create(ct,nelement,"app/ris:ct"); //time averaged concentration
+    memory->create(ct_new,nelement,"app/ris:ct_new"); //time averaged concentration
+    memory->create(ebond1,nelement,nelement,"app/ris:ebond1"); // 1NN bond energy
+    if(diffusionflag) memory->create(Lij,nelement,nelement,"app/ris:Lij"); //Onsager coefficient
 
     hcount = new int [nelement]; // total numner of switching with a vacancy;
 
@@ -254,7 +254,7 @@ void AppRis::input_app(char *command, int narg, char **arg)
     }
   }
 
-  // migration barriers for each element. For V this is the migration barrier is set to be 0 (given by the elements). 
+  // migration barriers for each element. For V this is the migration barrier is set to be 0 (given by the elements).
   else if (strcmp(command, "migbarrier") ==0) {
 
     if (narg < nelement) error->all(FLERR,"Illegal migbarrier command, a barrier is needed for each element");
@@ -349,14 +349,14 @@ void AppRis::input_app(char *command, int narg, char **arg)
     }
   }
 
-  // define sinks to defects and element, one sink each line 
+  // define sinks to defects and element, one sink each line
   else if (strcmp(command, "sink") ==0) {
     if(narg != 8) error->all(FLERR,"illegal sink command");
     if(sink_flag == 0) memory->create(isink, nlattice,"app/ris:isink");
-    if(sink_flag == 0) {for(i = 0; i < nlattice; i++)  isink[i] = 0;} // set no sink initially 
+    if(sink_flag == 0) {for(i = 0; i < nlattice; i++)  isink[i] = 0;} // set no sink initially
     sink_flag = 1;
 
-    nsink ++;  // sink id starts from 1 
+    nsink ++;  // sink id starts from 1
     grow_sinks();
     sink_range[nsink] = atof(arg[0]); // thickness of sink
     sink_shape[nsink] = atoi(arg[1]); // 1 dislocation, 2 interface, 3 3D region
@@ -367,29 +367,29 @@ void AppRis::input_app(char *command, int narg, char **arg)
     sink_radius[nsink] = atof(arg[6]); // radius for circular or polygonal sinks
     sink_segment[nsink] = atoi(arg[7]); // # of segment for polygon sinks
     sink_creation(nsink); //create the nth sink, can overlap with other sinks
-      
+
   }
 
-  // define element-sink interaction by eisink. One element and one sink in each line. The id of a sink is the order in sink commands, starting from 1    
+  // define element-sink interaction by eisink. One element and one sink in each line. The id of a sink is the order in sink commands, starting from 1
   else if (strcmp(command, "sink_interaction") ==0) {
 
     if(sink_flag == 0) error->all(FLERR,"sink_interaction needs to be defined after the sink command");
     if (narg < 3) error->all(FLERR,"Illegal sink_interaction command");
-    if (eisink_flag == 0) {// create element-sink interaction.  
+    if (eisink_flag == 0) {// create element-sink interaction.
        eisink_flag = 1;
-       memory->create(eisink,nelement,nsink+1,"app/ris:eisink");   
-       memory->create(nabsorption,nelement,nsink+1,"app/ris:nabsorption");   
-       memory->create(nreserve,nelement,nsink+1,"app/ris:nreserve");   
-       memory->create(sink_mfp,nelement,nsink+1,"app/ris:sink_mfp");   
+       memory->create(eisink,nelement,nsink+1,"app/ris:eisink");
+       memory->create(nabsorption,nelement,nsink+1,"app/ris:nabsorption");
+       memory->create(nreserve,nelement,nsink+1,"app/ris:nreserve");
+       memory->create(sink_mfp,nelement,nsink+1,"app/ris:sink_mfp");
        for (i = 0; i < nelement; i++ ) {
            for (j = 0; j < nsink+1; j++ ) {
-	       eisink[i][j] = 0.0;  // eisink = 0.0: no inteaction; eisink< -100: complete absortion; others: trapping or repulsion 
+	       eisink[i][j] = 0.0;  // eisink = 0.0: no inteaction; eisink< -100: complete absortion; others: trapping or repulsion
                nabsorption[i][j] = 0;
 	       nreserve[i][j] = 0;
                sink_mfp[i][j] = 1.0;
            }
-       }  
-    } 
+       }
+    }
 
     int eletype = atoi(arg[0]); // element starts from 0
     int sinkid = atoi(arg[1]); // sink id starts from 1
@@ -408,15 +408,15 @@ void AppRis::input_app(char *command, int narg, char **arg)
     if(sinkmotion_flag == 0)  memory->create(sink_dt_old, nsink+1, "app/ris:sink_dt_old");
     sinkmotion_flag = 1;
 
-    for (i = 0; i < nsink+1; i++) {sink_dr[i] = -1.0; sink_dt[i] = 0.0;} // by default no sink motion  
+    for (i = 0; i < nsink+1; i++) {sink_dr[i] = -1.0; sink_dt[i] = 0.0;} // by default no sink motion
 
     int nseg = narg/3;
     for (i = 0; i < nseg; i++) {
-        int sinkid = atoi(arg[i*3]); // sinkid start from 1 
+        int sinkid = atoi(arg[i*3]); // sinkid start from 1
         if(sinkid > nsink) error->all(FLERR,"sink_motion needs to be defined after the sink command");
-        sink_dr[sinkid] = atoi(arg[i*3+1]); // direction of sink motion (1 for x, 2 for y, and 3 or z), each step the displacement is a0/2 
+        sink_dr[sinkid] = atoi(arg[i*3+1]); // direction of sink motion (1 for x, 2 for y, and 3 or z), each step the displacement is a0/2
         double velocity = atof(arg[i*3+2]); // a0/s
-        sink_dt[sinkid] = 0.5e12/velocity; // picosecond 
+        sink_dt[sinkid] = 0.5e12/velocity; // picosecond
     }
   }
 
@@ -441,12 +441,12 @@ void AppRis::input_app(char *command, int narg, char **arg)
   // reactions for absorption and emission
   else if (strcmp(command, "ris") ==0) {
     ris_flag = 1;
-    
+
     if(nelement <= 0) error->all(FLERR,"ris: no elements have been defined!");
     memory->create(ris_type,nelement, "app/ris:ris_type");
     memory->create(ris_ci,nelement, "app/ris:ris_ci");
     memory->create(ris_total,nelement, "app/ris:ris_total");
-    //memory->create(ct_site,nlocal,nelement,"app/ris:ct_site"); //time averaged concentration 
+    //memory->create(ct_site,nlocal,nelement,"app/ris:ct_site"); //time averaged concentration
     int iarg = narg/2;
 
     for (i = 0; i < nelement; i++) {ris_ci[i] = 0.0; ris_total[i] = 0.0;}
@@ -455,7 +455,7 @@ void AppRis::input_app(char *command, int narg, char **arg)
       ris_ci[ris_type[i]] = atof(arg[i*2+1]);
     }
   }
-  // frenkel pair production   
+  // frenkel pair production
   else if (strcmp(command, "frenkelpair") ==0) {
 
     if(narg < 1) error->all(FLERR,"illegal frenkelpair command");
@@ -463,7 +463,7 @@ void AppRis::input_app(char *command, int narg, char **arg)
     //grow_frenkelpair();
 
     double dose_rate = atof(arg[0]);// dose rate
-    fpdistance = 0.0;  
+    fpdistance = 0.0;
     if(narg > 1) fpdistance = atof(arg[1]);// Frenkel pair separation
     fpdistance *=fpdistance;
 
@@ -471,18 +471,18 @@ void AppRis::input_app(char *command, int narg, char **arg)
     if(min_fpfreq > fpfreq) min_fpfreq = fpfreq;
   }
 
-  // ballistic mixing   
+  // ballistic mixing
   else if (strcmp(command, "ballistic") ==0) {
 
     if(narg < 2) error->all(FLERR,"illegal ballistic command");
     ballistic_flag = 1;
     grow_ballistic();
 
-    double mix_rate = atof(arg[0]);// mixing rate (in unit of dpa/s) 
-    bdistance = 0.0;  
+    double mix_rate = atof(arg[0]);// mixing rate (in unit of dpa/s)
+    bdistance = 0.0;
     bdistance = atof(arg[1]);// mixing range
 
-    bfreq[nballistic] = 1e12/nlocal/mix_rate; // time interval for mixing 
+    bfreq[nballistic] = 1e12/nlocal/mix_rate; // time interval for mixing
     if(min_bfreq > bfreq[nballistic]) min_bfreq = bfreq[nballistic];
     nballistic ++; // number of mixing events
   }
@@ -525,7 +525,7 @@ void AppRis::define_2NN()
     }
 
     for (j = 0; j < ncandidate; j++) {
-      if(frequency[j] < 0) continue; // jd already observed earlier 
+      if(frequency[j] < 0) continue; // jd already observed earlier
       jd = candidate[j];
       frequency[j]++;
       for (k = j+1; k < ncandidate; k++) {
@@ -592,11 +592,11 @@ void AppRis::init_app()
     esites = new int[3 + 3*maxneigh];
   }
 
-  // site statistics and sink reserved elements 
+  // site statistics and sink reserved elements
   int flag = 0;
   for ( i = 0; i < nelement; i++) {
       nsites_local[i] = 0;
-  } 
+  }
 
   for ( i = 0; i < nlocal; i++) {
     if (type[i] < BCC || type[i] > NBCC) flag = 1;
@@ -605,8 +605,8 @@ void AppRis::init_app()
   }
 
   int ntotal = 0;
-  for ( i = 0; i < VACANCY; i++) ntotal += nsites_local[i]; 
-  for ( i = 0; i < VACANCY; i++) ci[i] = 1.0*nsites_local[i]/ntotal; // need correction for V and SIA 
+  for ( i = 0; i < VACANCY; i++) ntotal += nsites_local[i];
+  for ( i = 0; i < VACANCY; i++) ci[i] = 1.0*nsites_local[i]/ntotal; // need correction for V and SIA
 
   int flagall;
   MPI_Allreduce(&flag,&flagall,1,MPI_INT,MPI_SUM,world);
@@ -622,9 +622,9 @@ void AppRis::init_app()
     }
   }
 
-  //ballistic mixing 
+  //ballistic mixing
   for (i = 0; i < nelement; i++) nrecombine[i] = 0;
-  for (i = 0; i < nlocal; i++) recombine(i); 
+  for (i = 0; i < nlocal; i++) recombine(i);
   // initialize the time_list for ballistic mixing
   if(ballistic_flag) {
     nFPair = 0;
@@ -655,17 +655,17 @@ void AppRis::init_app()
     }
   }
 
- //initialize the concentration vectors 
+ //initialize the concentration vectors
 if(concentrationflag) {
   //concentration_field();
-  dt_new = 0.0; 
+  dt_new = 0.0;
   for(i = 0; i < nelement; i ++) {
-     ct[i] = 0.0; 
-     ct_new[i] = 0.0; 
+     ct[i] = 0.0;
+     ct_new[i] = 0.0;
      //for(j = 0; j < nlocal; j ++) {
 	//ct_site[j][i] = 0.0;
      //}
-  } 
+  }
 //  for(i = 0; i < concentrationflag; i ++) {
 //     for(j = 0; j < nlocal; j++){
 //        disp[i][j] = 0.0;
@@ -690,7 +690,7 @@ if(concentrationflag) {
     for(j=0; j<nelement; j++) {
        sro[i][j] = 0.0;
     }
- } 
+ }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -739,24 +739,24 @@ double AppRis::sites_energy(int i, int estyle)
   int j,jd,n1nn;
   double eng = 0.0;
   double ci = 0.0;
-  
+
   int ielement = element[i];
   //if(ielement == NI) ci = site_concentration(i,estyle);
 
-  if(estyle == 0) return eng; 
+  if(estyle == 0) return eng;
   //energy from 1NN bonds
   n1nn = numneigh[i];  //num of 1NN
   for (j = 0; j < n1nn; j++) {
     jd = neighbor[i][j];
 
-    //adjust A-V bond based on local concentration, currently added for solute trapping  
+    //adjust A-V bond based on local concentration, currently added for solute trapping
     if(ielement==NI && element[jd] == VACANCY) {
        ci = site_concentration(i,estyle);
        eng += ci*ebond1[NI][VACANCY];
     } else if(ielement==VACANCY && element[jd] == NI) {
        ci = site_concentration(jd,estyle);
        eng += ci*ebond1[NI][VACANCY];
-    } else {   
+    } else {
        eng += ebond1[ielement][element[jd]];
     }
   }
@@ -766,17 +766,17 @@ double AppRis::sites_energy(int i, int estyle)
     int n2nn = numneigh2[i];
     for (j = 0; j < n2nn; j++) {
       jd = neighbor2[i][j];
-    
-      //adjust A-V bond based on local concentration 
+
+      //adjust A-V bond based on local concentration
       if(ielement==NI && element[jd] == VACANCY) {
          ci = site_concentration(i,estyle);
          eng += ci*ebond2[NI][VACANCY];
       } else if(ielement==VACANCY && element[jd] == NI) {
          ci = site_concentration(jd,estyle);
          eng += ci*ebond2[NI][VACANCY];
-      } else {   
+      } else {
          eng += ebond2[ielement][element[jd]];
-      } 
+      }
     }
   }
 
@@ -784,22 +784,22 @@ double AppRis::sites_energy(int i, int estyle)
 }
 
 /* ----------------------------------------------------------------------
-  compute local concentration to adjust V-V bond energy  
+  compute local concentration to adjust V-V bond energy
 ------------------------------------------------------------------------- */
 
 double AppRis::site_concentration(int i, int estyle)
-{ 
+{
   double ci = 0.0;
   int n1nn = numneigh[i]; //num of 1NN
-  
-  for(int j = 0; j < n1nn; j++) { 
+
+  for(int j = 0; j < n1nn; j++) {
      int jd = neighbor[i][j];
-     if(element[jd]==VACANCY) ci ++; 
+     if(element[jd]==VACANCY) ci ++;
   }
 
   if(estyle == 1)  {
      ci = 0.5 - (ci-1)/n1nn;
-     if(ci < 0.0) ci = 0.0; // attract to up to half of n1nn solutes 
+     if(ci < 0.0) ci = 0.0; // attract to up to half of n1nn solutes
      return 2*ci; // Changing from attraction to repulsion with increasing local concentration
   }
 
@@ -843,34 +843,34 @@ double AppRis::site_SP_energy(int i, int j, int estyle)
   eng0i = sites_energy(i,estyle); //total bonds with i initially,
   eng0j = sites_energy(j,estyle); //total bonds with j initially
 
-  // switch the element and recalculate the site energy 
+  // switch the element and recalculate the site energy
   element[i] = jele;
-  element[j] = iele; 
+  element[j] = iele;
   eng1i = sites_energy(i,estyle); //total bonds with i after switch
-  eng1j = sites_energy(j,estyle); //total bonds with j after switch 
+  eng1j = sites_energy(j,estyle); //total bonds with j after switch
 
-  // switch back 
-  element[j] = jele; 
-  element[i] = iele; 
+  // switch back
+  element[j] = jele;
+  element[i] = iele;
 
   //for vacancy the barrier is given by the element to be switched;
   if(element[i] == VACANCY) eng = mbarrier[jele] + eng1i + eng1j - eng0i -eng0j;
-  //for SIA the diffusion is given by itself 
+  //for SIA the diffusion is given by itself
   if(element[i] > VACANCY) eng = mbarrier[iele] + eng1i + eng1j - eng0i -eng0j;
 
-  //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink  
-  if(eisink_flag && (isink[i] > 0 || isink[j] > 0)) 
-    eng += (eisink[iele][isink[j]] + eisink[jele][isink[i]] - eisink[iele][isink[i]] - eisink[jele][isink[j]])/2.0;  
-  
+  //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink
+  if(eisink_flag && (isink[i] > 0 || isink[j] > 0))
+    eng += (eisink[iele][isink[j]] + eisink[jele][isink[i]] - eisink[iele][isink[i]] - eisink[jele][isink[j]])/2.0;
+
   //add elastic contribution if applicable
-  if(elastic_flag) 
+  if(elastic_flag)
     eng += (elastic_energy(j,iele) - elastic_energy(i,iele) + elastic_energy(i,jele) - elastic_energy(j,jele))/2.0;
 
   return eng;
 }
 
 /* ----------------------------------------------------------------------
-  compute barriers for an exchange event between i & j, with i being an SIA 
+  compute barriers for an exchange event between i & j, with i being an SIA
 ------------------------------------------------------------------------- */
 
 double AppRis::sia_SP_energy(int i, int j, int m, int n, int estyle)
@@ -884,35 +884,35 @@ double AppRis::sia_SP_energy(int i, int j, int m, int n, int estyle)
   eng0j = sites_energy(j,estyle); //total bonds with j initially
 
   // switch the element and recalculate the site energy
-  // m & n are the two elements in the dumbbell at i; m remains at i, and n is added to j  
-  element[i] = m; 
+  // m & n are the two elements in the dumbbell at i; m remains at i, and n is added to j
+  element[i] = m;
 
-  if(n == FE && jele == FE) {element[j] = I1;}  
-  if(n == FE && jele == CU) {element[j] = I2;}  
-  if(n == CU && jele == FE) {element[j] = I2;}  
-  if(n == FE && jele == NI) {element[j] = I3;}  
-  if(n == NI && jele == FE) {element[j] = I3;}  
-  if(n == CU && jele == CU) {element[j] = I4;}  
-  if(n == CU && jele == NI) {element[j] = I5;}  
-  if(n == NI && jele == CU) {element[j] = I5;}  
-  if(n == NI && jele == NI) {element[j] = I6;}  
-  
+  if(n == FE && jele == FE) {element[j] = I1;}
+  if(n == FE && jele == CU) {element[j] = I2;}
+  if(n == CU && jele == FE) {element[j] = I2;}
+  if(n == FE && jele == NI) {element[j] = I3;}
+  if(n == NI && jele == FE) {element[j] = I3;}
+  if(n == CU && jele == CU) {element[j] = I4;}
+  if(n == CU && jele == NI) {element[j] = I5;}
+  if(n == NI && jele == CU) {element[j] = I5;}
+  if(n == NI && jele == NI) {element[j] = I6;}
+
   eng1i = sites_energy(i,estyle); //total bonds with i after switch
-  eng1j = sites_energy(j,estyle); //total bonds with j after switch 
+  eng1j = sites_energy(j,estyle); //total bonds with j after switch
 
-  // switch back 
-  element[j] = jele; 
-  element[i] = iele; 
+  // switch back
+  element[j] = jele;
+  element[i] = iele;
 
   //for SIA the diffusion is given by itself
   eng = mbarrier[iele] + eng1i + eng1j - eng0i -eng0j;
 
-  //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink  
-  if(eisink_flag && (isink[i] > 0 || isink[j] > 0)) 
-    eng += (eisink[iele][isink[j]] + eisink[jele][isink[i]] - eisink[iele][isink[i]] - eisink[jele][isink[j]])/2.0;  
+  //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink
+  if(eisink_flag && (isink[i] > 0 || isink[j] > 0))
+    eng += (eisink[iele][isink[j]] + eisink[jele][isink[i]] - eisink[iele][isink[i]] - eisink[jele][isink[j]])/2.0;
 
   //add elastic contribution if applicable
-  if(elastic_flag) 
+  if(elastic_flag)
     eng += (elastic_energy(j,iele) - elastic_energy(i,iele) + elastic_energy(i,jele) - elastic_energy(j,jele))/2.0;
 
   return eng;
@@ -928,14 +928,14 @@ double AppRis::site_propensity(int i)
   int j, k, iid, jid, sflag;
 
   clear_events(i);
-  int ei = element[i]; 
+  int ei = element[i];
   double prob_reaction = 0.0;
   double prob_hop = 0.0;
   double ebarrier = 0.0;
   double hpropensity = 0.0;
   double deltaE = 0.0;
 
-  // Chech possible reactions with barriers 
+  // Chech possible reactions with barriers
   if(reaction_flag) { //reaction flag
     for(j = 0; j < nreaction; j++) {
       //if(renable[j] == 0) continue;
@@ -943,7 +943,7 @@ double AppRis::site_propensity(int i)
         iid = rinput[j];
         jid = routput[j];
 
-        if(eisink_flag && eisink[element[jid]][isink[i]] != 0.0) continue; //no production at sink 
+        if(eisink_flag && eisink[element[jid]][isink[i]] != 0.0) continue; //no production at sink
        	deltaE = -sites_energy(i,engstyle); //site energy before reaction
         element[i] = jid;
         deltaE += sites_energy(i,engstyle);  //site energy after reaction
@@ -960,7 +960,7 @@ double AppRis::site_propensity(int i)
   if (ei < VACANCY) return prob_reaction;
 
   // for hopping event propensity, the barrier is calculated by site_SP_energy();
-  if (ei == VACANCY) { // vacancy hopping 
+  if (ei == VACANCY) { // vacancy hopping
     for (j = 0; j < numneigh[i]; j++) {
       jid = neighbor[i][j];
       if(element[jid] >= VACANCY) continue; // no vacancy-SIA exchange;
@@ -969,23 +969,23 @@ double AppRis::site_propensity(int i)
       add_event(i,jid,1,-1,hpropensity);
       prob_hop += hpropensity;
     }
-  } else if (ei > VACANCY) {// SIA hopping 
+  } else if (ei > VACANCY) {// SIA hopping
     for (j = 0; j < numneigh[i]; j++) {
       jid = neighbor[i][j];
       if(element[jid] >= VACANCY) continue; // no SIA-SIA exchange;
 
       int enew[2];
-      if(ei == I1) {enew[0] = FE; enew[1] = FE;}      
-      if(ei == I2) {enew[0] = FE; enew[1] = CU;}      
-      if(ei == I3) {enew[0] = FE; enew[1] = NI;}      
-      if(ei == I4) {enew[0] = CU; enew[1] = CU;}      
-      if(ei == I5) {enew[0] = CU; enew[1] = NI;}      
-      if(ei == I6) {enew[0] = NI; enew[1] = NI;}      
+      if(ei == I1) {enew[0] = FE; enew[1] = FE;}
+      if(ei == I2) {enew[0] = FE; enew[1] = CU;}
+      if(ei == I3) {enew[0] = FE; enew[1] = NI;}
+      if(ei == I4) {enew[0] = CU; enew[1] = CU;}
+      if(ei == I5) {enew[0] = CU; enew[1] = NI;}
+      if(ei == I6) {enew[0] = NI; enew[1] = NI;}
 
-      //two events are added here, each taking one element from the dumbell, 
-      //and add it to jid to form a new dumbbell 
-      //This assumes that the SIA is free to rotate and it may induce artificial diffsuion if not the case. 
-      //Will be changed later 
+      //two events are added here, each taking one element from the dumbell,
+      //and add it to jid to form a new dumbbell
+      //This assumes that the SIA is free to rotate and it may induce artificial diffsuion if not the case.
+      //Will be changed later
       ebarrier = sia_SP_energy(i,jid,enew[0],enew[1],engstyle); // enew[0] stays at i
       hpropensity = exp(-ebarrier/KBT);
       add_event(i,jid,1,0,hpropensity);
@@ -994,7 +994,7 @@ double AppRis::site_propensity(int i)
       ebarrier = sia_SP_energy(i,jid,enew[1],enew[0],engstyle); // enew[1] stays at i
       hpropensity = exp(-ebarrier/KBT);
       add_event(i,jid,1,1,hpropensity);
-      prob_hop += hpropensity; 
+      prob_hop += hpropensity;
     }
   }
   return prob_hop + prob_reaction;
@@ -1039,11 +1039,11 @@ void AppRis::site_event(int i, class RandomPark *random)
        element[which] = element[j];
        element[j] = k;
     } else { // switch with a 1NN of i
-      if(k==VACANCY) { //VACANCY mechanism 
+      if(k==VACANCY) { //VACANCY mechanism
         element[i] = element[j];
         element[j] = k;
-      } else { //SIA switch 
-        SIA_switch(i,j,which);  
+      } else { //SIA switch
+        SIA_switch(i,j,which);
       }
     }
 
@@ -1091,19 +1091,19 @@ void AppRis::site_event(int i, class RandomPark *random)
   }
 
   // perform zero_barrier events: absorption and recombination
-  int rid = recombine(i); // recombine site i with its neighbor rid 
+  int rid = recombine(i); // recombine site i with its neighbor rid
   if(rid >= 0) update_propensity(rid);
 
-  // calculate the vector between the two recombined site before diffusing into recombination radius 
-  // if(rid >= 0 && rstyle == 1) vec_recombine(i,rid); // i was at j site before diffusion 
+  // calculate the vector between the two recombined site before diffusing into recombination radius
+  // if(rid >= 0 && rstyle == 1) vec_recombine(i,rid); // i was at j site before diffusion
 
   if(rstyle == 1 || rstyle == 3 || rstyle == 4) {
-    //recombine j with its neighbors too after hopping; 
-    int rid = recombine(j); // recombine site i with its neighbor rid 
+    //recombine j with its neighbors too after hopping;
+    int rid = recombine(j); // recombine site i with its neighbor rid
     if(rid >= 0) update_propensity(rid);
- 
-    // calculate the vector between the two recombined site before diffusing into recombination radius 
-    //if(rid >= 0) vec_recombine(j,rid); // j was at i site before diffusion 
+
+    // calculate the vector between the two recombined site before diffusing into recombination radius
+    //if(rid >= 0) vec_recombine(j,rid); // j was at i site before diffusion
 
     //sink absorption of element[j] after hopping,for hop only since no element produced at its sinks
     if(nsink > 0) {
@@ -1113,7 +1113,7 @@ void AppRis::site_event(int i, class RandomPark *random)
   }
 
   // compute propensity changes for participating sites i & j and their neighbors
-  // note that when solving using sector, j or neighbors of i may not belong to the current sector so not updated  
+  // note that when solving using sector, j or neighbors of i may not belong to the current sector so not updated
   // recommend to solve with "sector no" option
 
   update_propensity(i);
@@ -1275,7 +1275,7 @@ void AppRis::clear_events(int i)
 }
 
 /* ----------------------------------------------------------------------
-   Perform SIA switch with an element 
+   Perform SIA switch with an element
 ------------------------------------------------------------------------- */
 
 void AppRis::SIA_switch(int i, int j, int m)
@@ -1289,35 +1289,35 @@ void AppRis::SIA_switch(int i, int j, int m)
   if( ej > VACANCY ) error->all(FLERR, "No matrix element for the required switch!");
 
   int ei1, ei2, enew[3];
-  if(ei == I1) {enew[1] = FE; enew[2] = FE;}      
-  if(ei == I2) {enew[1] = FE; enew[2] = CU;}      
-  if(ei == I3) {enew[1] = FE; enew[2] = NI;}      
-  if(ei == I4) {enew[1] = CU; enew[2] = CU;}      
-  if(ei == I5) {enew[1] = CU; enew[2] = NI;}      
-  if(ei == I6) {enew[1] = NI; enew[2] = NI;}      
-  
+  if(ei == I1) {enew[1] = FE; enew[2] = FE;}
+  if(ei == I2) {enew[1] = FE; enew[2] = CU;}
+  if(ei == I3) {enew[1] = FE; enew[2] = NI;}
+  if(ei == I4) {enew[1] = CU; enew[2] = CU;}
+  if(ei == I5) {enew[1] = CU; enew[2] = NI;}
+  if(ei == I6) {enew[1] = NI; enew[2] = NI;}
+
   //enew[m] stays at site i, and the other is added to site j to form a new dumbbell
   enew[0] = enew[2-m];
   element[i] = enew[m+1];
   nsites_local[element[i]] ++;
 
-  if(enew[0] == FE && ej == FE) {element[j] = I1;}  
-  if(enew[0] == FE && ej == CU) {element[j] = I2;}  
-  if(enew[0] == CU && ej == FE) {element[j] = I2;}  
-  if(enew[0] == FE && ej == NI) {element[j] = I3;} 
-  if(enew[0] == NI && ej == FE) {element[j] = I3;} 
-  if(enew[0] == CU && ej == CU) {element[j] = I4;} 
-  if(enew[0] == CU && ej == NI) {element[j] = I5;} 
-  if(enew[0] == NI && ej == CU) {element[j] = I5;} 
-  if(enew[0] == NI && ej == NI) {element[j] = I6;} 
+  if(enew[0] == FE && ej == FE) {element[j] = I1;}
+  if(enew[0] == FE && ej == CU) {element[j] = I2;}
+  if(enew[0] == CU && ej == FE) {element[j] = I2;}
+  if(enew[0] == FE && ej == NI) {element[j] = I3;}
+  if(enew[0] == NI && ej == FE) {element[j] = I3;}
+  if(enew[0] == CU && ej == CU) {element[j] = I4;}
+  if(enew[0] == CU && ej == NI) {element[j] = I5;}
+  if(enew[0] == NI && ej == CU) {element[j] = I5;}
+  if(enew[0] == NI && ej == NI) {element[j] = I6;}
   nsites_local[element[j]] ++;
-  
+
   return;
 }
 
 /* ----------------------------------------------------------------------
   add an acceleration event to list for site I
-  return a propensity, Not used here (to be develeted or updated) 
+  return a propensity, Not used here (to be develeted or updated)
 ------------------------------------------------------------------------- */
 
 double AppRis::add_acceleration_event(int i, int j)
@@ -1436,7 +1436,7 @@ void AppRis::add_event(int i, int j, int rstyle, int which, double propensity)
 }
 
 /* ----------------------------------------------------------------------
-   check if new Frenkal pairs need to be generated 
+   check if new Frenkal pairs need to be generated
 ------------------------------------------------------------------------- */
 void AppRis::check_frenkelpair(double t)
 {
@@ -1454,69 +1454,69 @@ void AppRis::check_frenkelpair(double t)
 }
 
 /* ----------------------------------------------------------------------
-  Create Frenkel pairs randomly. may need to scale the dose rate 
-  by the # of processors when work in parallel. Currently, Frenkel Pairs 
-  are always produced by the same processor. To be modified later.  
+  Create Frenkel pairs randomly. may need to scale the dose rate
+  by the # of processors when work in parallel. Currently, Frenkel Pairs
+  are always produced by the same processor. To be modified later.
 ------------------------------------------------------------------------- */
 
 void AppRis::frenkelpair()
-{ 
+{
   int vid,iid;
-  
+
   // creat an vacancy
-  int allsites = nsites_local[FE] + nsites_local[CU] + nsites_local[NI]; 
+  int allsites = nsites_local[FE] + nsites_local[CU] + nsites_local[NI];
   if(allsites == 0) error->all(FLERR, "No matrix sites available for FP generation!");
-  nFPair ++;   
+  nFPair ++;
   int findv = 1;
-  int velement = -1; 
-  while (findv) { 
+  int velement = -1;
+  while (findv) {
     int id = static_cast<int> (nlocal*ranris->uniform());
     if(id < nlocal && element[id] < VACANCY) {
       velement = element[id];
-      element[id] = VACANCY;  
+      element[id] = VACANCY;
       nsites_local[VACANCY] ++;
       nsites_local[velement] --;
-      
-      // recalculate the propensity if defects are generated 
+
+      // recalculate the propensity if defects are generated
       update_propensity(id);
       vid = id;
       findv = 0;
     }
   }
-  
-  //return; // spk_v no interstitial creation for test 
+
+  //return; // spk_v no interstitial creation for test
   //create an interstitial
-  int findi = 1; 
-  while (findi) { 
+  int findi = 1;
+  while (findi) {
     int id = static_cast<int> (nlocal*ranris->uniform());
 
     if(id < nlocal && element[id] < VACANCY) {
-      if(fpdistance = 0.0) {// no requirement on fp distance   
+      if(fpdistance = 0.0) {// no requirement on fp distance
 	findi = 0;
       } else {
         double dij = distanceIJ(vid,id);
-        if(dij <= fpdistance) { 
+        if(dij <= fpdistance) {
 	  findi = 0;
 	  iid = id;
 	}
       }
-    }    
+    }
 
     if(findi == 0) {
-      nsites_local[element[id]] --; // site element number -1 
+      nsites_local[element[id]] --; // site element number -1
       //element[id] = I1;
-      if(velement == FE && element[iid] == FE) element[iid] = I1; // FeFe interstitial  
-      if(velement == FE && element[iid] == CU) element[iid] = I2; // FeCu interstitial  
-      if(velement == FE && element[iid] == NI) element[iid] = I3; // FeNi interstitial  
-      if(velement == CU && element[iid] == FE) element[iid] = I2; // FeCu interstitial  
-      if(velement == CU && element[iid] == CU) element[iid] = I4; // CuCu interstitial  
-      if(velement == CU && element[iid] == NI) element[iid] = I5; // CuNi interstitial  
-      if(velement == NI && element[iid] == FE) element[iid] = I3; // FeNi interstitial  
-      if(velement == NI && element[iid] == CU) element[iid] = I5; // CuNi interstitial  
-      if(velement == NI && element[iid] == NI) element[iid] = I6; // NiNi interstitial  
-     
+      if(velement == FE && element[iid] == FE) element[iid] = I1; // FeFe interstitial
+      if(velement == FE && element[iid] == CU) element[iid] = I2; // FeCu interstitial
+      if(velement == FE && element[iid] == NI) element[iid] = I3; // FeNi interstitial
+      if(velement == CU && element[iid] == FE) element[iid] = I2; // FeCu interstitial
+      if(velement == CU && element[iid] == CU) element[iid] = I4; // CuCu interstitial
+      if(velement == CU && element[iid] == NI) element[iid] = I5; // CuNi interstitial
+      if(velement == NI && element[iid] == FE) element[iid] = I3; // FeNi interstitial
+      if(velement == NI && element[iid] == CU) element[iid] = I5; // CuNi interstitial
+      if(velement == NI && element[iid] == NI) element[iid] = I6; // NiNi interstitial
+
       nsites_local[element[iid]] ++;
-      update_propensity(iid); 
+      update_propensity(iid);
     }
   }
 
@@ -1524,7 +1524,7 @@ void AppRis::frenkelpair()
 }
 
 /* ----------------------------------------------------------------------
-   check if a mixing event if needed 
+   check if a mixing event if needed
 ------------------------------------------------------------------------- */
 void AppRis::check_ballistic(double t)
 {
@@ -1541,44 +1541,44 @@ void AppRis::check_ballistic(double t)
 }
 
 /* ----------------------------------------------------------------------
-  perform ballistic mixing. randomly mixing two atoms (no v, sia mixing)  
+  perform ballistic mixing. randomly mixing two atoms (no v, sia mixing)
 ------------------------------------------------------------------------- */
 
 void AppRis::ballistic(int i)
-{ 
+{
   int id,itype,iid,jid;
 
-  // find atom i 
-  int allsites = nsites_local[FE] + nsites_local[CU] + nsites_local[NI]; 
+  // find atom i
+  int allsites = nsites_local[FE] + nsites_local[CU] + nsites_local[NI];
   if(allsites == 0) error->all(FLERR, "No matrix sites available for mixing!");
   if(allsites == nsites_local[FE]) error->all(FLERR, "No matrix sites available for mixing!");
   if(allsites == nsites_local[CU]) error->all(FLERR, "No matrix sites available for mixing!");
   if(allsites == nsites_local[NI]) error->all(FLERR, "No matrix sites available for mixing!");
-  
+
   int findi = 1;
-  while (findi) { 
+  while (findi) {
     id = static_cast<int> (nlocal*ranris->uniform());
     if(id < nlocal && element[id] < VACANCY) {
-      iid = id; 
+      iid = id;
       findi = 0;
     }
   }
-  
-  //find an element for mix  
-  int findj = 1; 
-  while (findj) { 
+
+  //find an element for mix
+  int findj = 1;
+  while (findj) {
     id = static_cast<int> (nlocal*ranris->uniform());
     if(id < nlocal && element[id] < VACANCY) {
         double dij = distanceIJ(iid,id);
 	double mixprobability = exp(-dij/bdistance);
-        if(ranris->uniform() <= mixprobability) { 
+        if(ranris->uniform() <= mixprobability) {
 	  findj = 0;
 	  jid = id;
-	} 
-    }    
+	}
+    }
   }
 
-  //switch iid and jid and update the propensity  
+  //switch iid and jid and update the propensity
   itype = element[iid];
   element[iid] = element[jid];
   element[jid] = itype;
@@ -1588,13 +1588,13 @@ void AppRis::ballistic(int i)
   return;
 }
 /* ----------------------------------------------------------------------
-   check if any sink motion needs to be performed  
+   check if any sink motion needs to be performed
 ------------------------------------------------------------------------- */
 void AppRis::check_sinkmotion(double t)
 {
   int nmove = 0;
   for(int i = 1; i < nsink+1; i ++) {
-     if(sink_dr[i] < 0.0) continue; // skip static sinks 
+     if(sink_dr[i] < 0.0) continue; // skip static sinks
      sink_dt_new[i] = static_cast<int>(t/sink_dt[i]);
      nmove = sink_dt_new[i] - sink_dt_old[i];
      while (nmove > 0) {  //perform mixing nmix times
@@ -1609,89 +1609,89 @@ void AppRis::check_sinkmotion(double t)
 
 /* ----------------------------------------------------------------------
    move sink n in the direction of sink_dr[n] with an amount of a0/2
-   This is done by delete sink n and recreate it with the center displaced by a0/2     
+   This is done by delete sink n and recreate it with the center displaced by a0/2
 ------------------------------------------------------------------------- */
 void AppRis::sink_motion(int n)
 {
   int nlattice = nlocal + nghost;
-  double dr=sink_dr[n]; 
-  if(dr == 0.0) xsink[n][0] = xsink[n][0] + 0.5;  
-  if(dr == 1.0) xsink[n][1] = xsink[n][1] + 0.5;  
-  if(dr == 2.0) xsink[n][2] = xsink[n][2] + 0.5;  
+  double dr=sink_dr[n];
+  if(dr == 0.0) xsink[n][0] = xsink[n][0] + 0.5;
+  if(dr == 1.0) xsink[n][1] = xsink[n][1] + 0.5;
+  if(dr == 2.0) xsink[n][2] = xsink[n][2] + 0.5;
 
   for (int i=0; i<nlattice; i++) {
       if(isink[i] == n) isink[i] = 0; //remove sink n
-  } 
+  }
 
   sink_creation(n); //recreate sink n
   return;
 }
 
 /* ----------------------------------------------------------------------
-   absorption of an element at site i. This is probabbly not needed.   
+   absorption of an element at site i. This is probabbly not needed.
 ------------------------------------------------------------------------- */
 void AppRis::absorption(int i)
 {
   int j, k, m, n,ei, ei1, ei2, ntotal;
-  double cr[3]; 
+  double cr[3];
   k = element[i];
   n = isink[i];
   int sflag = 0;
 
   if(eisink[k][n] < -100 && ranris->uniform() <= 1.0/sink_mfp[k][n]) {
-         sflag = 1; 
-         nabsorption[k][n] ++; // number of element k absorbed by type of isink[i] sink 
+         sflag = 1;
+         nabsorption[k][n] ++; // number of element k absorbed by type of isink[i] sink
   }
 
-  if(sflag == 0) return; // no absorption 
-           
-  if (k == VACANCY)  { // choose a reserved SIA to recombine with 
-     j = 0;    
+  if(sflag == 0) return; // no absorption
+
+  if (k == VACANCY)  { // choose a reserved SIA to recombine with
+     j = 0;
      ei = -1;
      double rand_me = ranris->uniform();
- 
+
      while (ei<0) {
         ntotal = 0;
-        for(m = 0; m < VACANCY; m++) {if(nreserve[m][n] > 0) ntotal += nreserve[m][n];} // count all reserved SIAs at sinks 
+        for(m = 0; m < VACANCY; m++) {if(nreserve[m][n] > 0) ntotal += nreserve[m][n];} // count all reserved SIAs at sinks
 
         if (ntotal > 0) {// choose from reserved elements at sinks
            for(m = 0; m < VACANCY; m++) cr[m] = 1.0*nreserve[m][n]/ntotal;
-           if(rand_me < cr[j])  ei = j; 
-           if(nreserve[j][n] > 0) rand_me -= cr[j]; // skip negatively reserved element 
-           j++; 
-           } else {// choose from element if none have been reserved 
-             if(rand_me < ci[j])  ei = j; 
+           if(rand_me < cr[j])  ei = j;
+           if(nreserve[j][n] > 0) rand_me -= cr[j]; // skip negatively reserved element
+           j++;
+           } else {// choose from element if none have been reserved
+             if(rand_me < ci[j])  ei = j;
              rand_me -= ci[j];
-             j++; 
+             j++;
            }
-             
+
          if(j == VACANCY && ei < 0) error->all(FLERR,"no element found to recombine with vacancy at sink");
-     }   
+     }
 
      nsites_local[k] --;
      nsites_local[ei] ++;
      element[i] = ei;
      nreserve[ei][n] --;
 
-  } else { // randomly reserve one element from a dumbbell 
+  } else { // randomly reserve one element from a dumbbell
 
-     if(k == I1) {ei1 = FE; ei2 = FE;}      
-     if(k == I2) {ei1 = FE; ei2 = CU;}      
-     if(k == I3) {ei1 = FE; ei2 = NI;}      
-     if(k == I4) {ei1 = CU; ei2 = CU;}      
-     if(k == I5) {ei1 = CU; ei2 = NI;}      
-     if(k == I6) {ei1 = NI; ei2 = NI;}      
-         
+     if(k == I1) {ei1 = FE; ei2 = FE;}
+     if(k == I2) {ei1 = FE; ei2 = CU;}
+     if(k == I3) {ei1 = FE; ei2 = NI;}
+     if(k == I4) {ei1 = CU; ei2 = CU;}
+     if(k == I5) {ei1 = CU; ei2 = NI;}
+     if(k == I6) {ei1 = NI; ei2 = NI;}
+
      nsites_local[k] --;
      if (ranris->uniform()> 0.5) {
         element[i] = ei1;
-        nreserve[ei2][n] ++; 
+        nreserve[ei2][n] ++;
         nsites_local[ei1] ++;
      } else {
         element[i] = ei2;
-        nreserve[ei1][n] ++; 
+        nreserve[ei1][n] ++;
         nsites_local[ei2] ++;
-     }     
+     }
   }
 
   // update reaction target number
@@ -1702,18 +1702,18 @@ void AppRis::absorption(int i)
      }
   }
 
-   return; 
+   return;
 }
 
 /*-----------------------------------------------------------------
-recombination within 2nd NN distance 
+recombination within 2nd NN distance
 -------------------------------------------------------------------*/
 
-int AppRis::recombine(int i) 
-{ 
+int AppRis::recombine(int i)
+{
   int n1nn, n2nn, m, e1, e2, iv, ii, ei1, ei2, eiv, eii;
-  
-  n1nn = numneigh[i];  
+
+  n1nn = numneigh[i];
   n2nn = 0;
   e1 = element[i];
   if(engstyle == 2) n2nn = numneigh2[i];
@@ -1721,29 +1721,29 @@ int AppRis::recombine(int i)
       if(n < numneigh[i])  m = neighbor[i][n];
       if(n >= numneigh[i])  m = neighbor2[i][n-n1nn]; // 2NN
 
-      if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy 
-      if(element[i] < I1 && element[m] < I1 ) continue; // None SIA 
-      //if(element[m] == VACANCY && element[i] <= VACANCY) return; // None SIA 
+      if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy
+      if(element[i] < I1 && element[m] < I1 ) continue; // None SIA
+      //if(element[m] == VACANCY && element[i] <= VACANCY) return; // None SIA
 
-      e2 = element[m]; 
+      e2 = element[m];
       nrecombine[e1] ++;
       nrecombine[e2] ++;
       nsites_local[e1] --;
       nsites_local[e2] --;
 
-      ii = m; // interstitial id  
-      if(e2 == VACANCY) {ii = i;} // switch if needed 
+      ii = m; // interstitial id
+      if(e2 == VACANCY) {ii = i;} // switch if needed
 
-      if(element[ii] == I1) {ei1 = FE; ei2 = FE;}      
-      if(element[ii] == I2) {ei1 = FE; ei2 = CU;}      
-      if(element[ii] == I3) {ei1 = FE; ei2 = NI;}      
-      if(element[ii] == I4) {ei1 = CU; ei2 = CU;}      
-      if(element[ii] == I5) {ei1 = CU; ei2 = NI;}      
-      if(element[ii] == I6) {ei1 = NI; ei2 = NI;}      
+      if(element[ii] == I1) {ei1 = FE; ei2 = FE;}
+      if(element[ii] == I2) {ei1 = FE; ei2 = CU;}
+      if(element[ii] == I3) {ei1 = FE; ei2 = NI;}
+      if(element[ii] == I4) {ei1 = CU; ei2 = CU;}
+      if(element[ii] == I5) {ei1 = CU; ei2 = NI;}
+      if(element[ii] == I6) {ei1 = NI; ei2 = NI;}
 
       eiv = ei1;
       eii = ei2;
-      if(ranris->uniform() < 0.5) {eiv = ei2; eii = ei1;} 
+      if(ranris->uniform() < 0.5) {eiv = ei2; eii = ei1;}
       element[i] = eiv;
       element[m] = eii;
 
@@ -1756,7 +1756,7 @@ int AppRis::recombine(int i)
        for(int k = 0; k < nreaction; k++) {
        if(routput[k] == element[i] || routput[k] == element[m])  target_local[k] ++;
        }
-     } 
+     }
      return m;
   }
 
@@ -1774,14 +1774,14 @@ double AppRis::total_energy( )
   double penergy = 0.0;
   for(int i = 0; i < nlocal; i++) penergy += sites_energy(i,engstyle);
 
-  if(elastic_flag) { // elastic energy 
+  if(elastic_flag) { // elastic energy
     for(j = 0; j < nlocal; j++) {
       etype = element[j];
       penergy += elastic_energy(j,etype);
     }
   }
 
-  if(eisink_flag) { // segregation energy 
+  if(eisink_flag) { // segregation energy
     for(j = 0; j < nlocal; j++) {
       etype = element[j];
       stype = isink[j];
@@ -1793,7 +1793,7 @@ double AppRis::total_energy( )
 }
 
 /* ----------------------------------------------------------------------
-  calculate the Onsager coefficient based on atomic displacement  
+  calculate the Onsager coefficient based on atomic displacement
 ------------------------------------------------------------------------- */
 void AppRis::onsager(double t)
 {
@@ -1802,18 +1802,18 @@ void AppRis::onsager(double t)
 
   if(t <= 0) return;
 
-  for (j = 0; i < 3; i++) { 
-  for (j = 0; j < nelement; j++) { 
+  for (j = 0; i < 3; i++) {
+  for (j = 0; j < nelement; j++) {
 	  total_disp[i][j] = 0.0;
   }
   }
 
   // calculate the total displacement of each element
   for (i = 0; i < nlocal; i++) {
-     total_disp[0][element[i]] += disp[0][i];      
-     total_disp[1][element[i]] += disp[1][i];      
-     total_disp[2][element[i]] += disp[2][i];      
-  } 
+     total_disp[0][element[i]] += disp[0][i];
+     total_disp[1][element[i]] += disp[1][i];
+     total_disp[2][element[i]] += disp[2][i];
+  }
 
   for (i = 0; i < nelement; i++) {
   for (j = i; j < nelement; j++) {
@@ -1827,18 +1827,18 @@ void AppRis::onsager(double t)
 }
 
 /* ----------------------------------------------------------------------
-  calculate the short range order matrix  
+  calculate the short range order matrix
 ------------------------------------------------------------------------- */
 void AppRis::short_range_order()
 { int i,j,jd,itype,jtype;
 
-  // initialization 
+  // initialization
   for(i=0; i<nelement; i++) {
      total_neighbor[i] = 0;
      for(j=0; j<nelement; j++) {
         sro[i][j] = 0.0;
      }
-  } 
+  }
 
   for(i=0; i<nlocal; i++) {
      itype = element[i];
@@ -1847,12 +1847,12 @@ void AppRis::short_range_order()
         total_neighbor[itype] ++;
 	sro[itype][jtype] += 1;
      }
-  } 
+  }
 
   for(i=0; i<nelement; i++) {
      for(j=0; j<nelement; j++) {
         double jconcentration = 1.0*nsites_local[j]/nlocal;
-	if(jconcentration == 0.0) { // there is no j element 
+	if(jconcentration == 0.0) { // there is no j element
 	  sro[i][j] = 1.0;
 	} else {
           sro[i][j] /= total_neighbor[i];
@@ -1860,27 +1860,27 @@ void AppRis::short_range_order()
           sro[i][j] = 1.0 - sro[i][j];
 	}
      }
-  } 
+  }
 
-  return; 
+  return;
 }
 
 /* ----------------------------------------------------------------------
-  Calculate time dependent ris of given element 
+  Calculate time dependent ris of given element
 ------------------------------------------------------------------------- */
 void AppRis::ris_time()
 {
   int i,j,ncell;
-  int **icell; 
+  int **icell;
 
   ncell = static_cast<int>(lprd[2]); // bin size = 1
   icell = new int *[ncell];
   for(i = 0; i < ncell; i++) {
      icell[i] = new int[nelement];
-  } 
+  }
 
   for(i = 0; i < nelement; i++) ris_total[i] = 0.0;
-  for(i = 0; i < ncell; i++){ 
+  for(i = 0; i < ncell; i++){
   for(j = 0; j < nelement; j++) {
      icell[i][j] = 0;
   }}
@@ -1888,49 +1888,49 @@ void AppRis::ris_time()
   for(i = 0; i < nlocal; i++) {
      int iz = static_cast<int>(xyz[i][2] - boxlo[2]);
      icell[iz][element[i]] += 1;
-  } 
+  }
 
-  int nlayer = nlocal/ncell; 
+  int nlayer = nlocal/ncell;
   for(j = 0; j < nelement; j++) {
-     if(ris_ci[j] == 0.0) continue; // do not calcualte for those not monitored 
+     if(ris_ci[j] == 0.0) continue; // do not calcualte for those not monitored
      for(i = 0; i < ncell; i++) {
         double dcij = 1.0*icell[i][j]/nlayer - ris_ci[j]; // deviation from nominal concentration
-        ris_total[j] += fabs(dcij)/2.0; // count both enrichment and depletion and the divide the sum by 2 
+        ris_total[j] += fabs(dcij)/2.0; // count both enrichment and depletion and the divide the sum by 2
      }
-  }  
+  }
 
   for(i = 0; i < ncell; i++) {
-     delete [] icell[i]; 
-  } 
+     delete [] icell[i];
+  }
   delete [] icell;
 
   return;
 }
 
 /* ----------------------------------------------------------------------
-  Integrate c*t at each site for fractional occupancy over time 
+  Integrate c*t at each site for fractional occupancy over time
 ------------------------------------------------------------------------- */
 void AppRis::concentration_field(double dt)
 {
-  dt_new += dt; // update time interval 
+  dt_new += dt; // update time interval
   for(int i = 0; i < nlocal; i++) {
-     ct_new[element[i]] += dt; 
-     //ct_site[i][element[i]] += dt;     
-  } 
+     ct_new[element[i]] += dt;
+     //ct_site[i][element[i]] += dt;
+  }
 
   return;
 }
 
 /* ----------------------------------------------------------------------
-  update time averaged concentrations 
+  update time averaged concentrations
 ------------------------------------------------------------------------- */
 void AppRis::time_averaged_concentration()
 {
-  for(int i = 0; i < nelement; i++) { // ct = c*t / dt 
-     if(dt_new > 0.0) ct[i] = ct_new[i]/dt_new/nlocal; 
+  for(int i = 0; i < nelement; i++) { // ct = c*t / dt
+     if(dt_new > 0.0) ct[i] = ct_new[i]/dt_new/nlocal;
      ct_new[i] = 0.0;
   }
-  dt_new = 0.0;   
+  dt_new = 0.0;
 }
 
 /* ----------------------------------------------------------------------
@@ -3193,7 +3193,7 @@ void AppRis::trapozidal(double omegas[100], double XP[9][100], int j, int k, dou
 }
 
 /* ----------------------------------------------------------------------
-   calculate the distance between i and j in vector form. 
+   calculate the distance between i and j in vector form.
 ------------------------------------------------------------------------- */
 double AppRis::distanceIJ(int i, int j)
 {
@@ -3208,13 +3208,13 @@ double AppRis::distanceIJ(int i, int j)
    lprd[1] = domain->yprd;
    lprd[2] = domain->zprd;
 
-   dij[3] = 0.0; 
+   dij[3] = 0.0;
    for (int k = 0; k < 3; k++) { //update
        dij[k] = xyz[j][k] - xyz[i][k];
        if (periodicity[k] && dij[k] >= lprd[k]/2.0) dij[k] -= lprd[k];
        if (periodicity[k] && dij[k] <= -lprd[k]/2.0) dij[k] += lprd[k];
        dij[3] += dij[k]*dij[k];
-   } 
+   }
 
    return sqrt(dij[3]); //square root of distance
 }

@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -47,9 +47,9 @@ Lattice::Lattice(SPPARKS *spk, int narg, char **arg) : Pointers(spk)
   else if (strcmp(arg[0],"fcc") == 0) style = FCC;
   else if (strcmp(arg[0],"bcc") == 0) style = BCC;
   else if (strcmp(arg[0],"diamond") == 0) style = DIAMOND;
-  else if (strcmp(arg[0],"bcc/octa") == 0) style = BCC_OCTA; // new style added 
-  //else if (strcmp(arg[0],"bcc/tetra") == 0) style = BCC_TETRA; 
-  //else if (strcmp(arg[0],"bcc/octa/tetra") == 0) style = BCC_OCTA_TETRA; // end add 
+  else if (strcmp(arg[0],"bcc/octa") == 0) style = BCC_OCTA; // new style added
+  //else if (strcmp(arg[0],"bcc/tetra") == 0) style = BCC_TETRA;
+  //else if (strcmp(arg[0],"bcc/octa/tetra") == 0) style = BCC_OCTA_TETRA; // end add
   else if (strcmp(arg[0],"fcc/octa/tetra") == 0) style = FCC_OCTA_TETRA;
   else if (strcmp(arg[0],"random/1d") == 0) style = RANDOM_1D;
   else if (strcmp(arg[0],"random/2d") == 0) style = RANDOM_2D;
@@ -63,7 +63,7 @@ Lattice::Lattice(SPPARKS *spk, int narg, char **arg) : Pointers(spk)
 
   if (style == LINE_2N || style == SQ_4N || style == SQ_8N ||
       style == TRI || style == SC_6N || style == SC_26N ||
-      style == FCC || style == BCC || style == BCC_OCTA || style == DIAMOND || 
+      style == FCC || style == BCC || style == BCC_OCTA || style == DIAMOND ||
       style == FCC_OCTA_TETRA) {
     if (narg != 2) error->all(FLERR,"Illegal lattice command");
     latconst = atof(arg[1]);
@@ -78,16 +78,16 @@ Lattice::Lattice(SPPARKS *spk, int narg, char **arg) : Pointers(spk)
 
   // check dimensionality
 
-  if ((style == LINE_2N || style == RANDOM_1D) && 
+  if ((style == LINE_2N || style == RANDOM_1D) &&
       domain->dimension != 1)
     error->all(FLERR,"Lattice style does not match dimension");
-  if ((style == SQ_4N || style == SQ_8N || style == TRI || 
-       style == RANDOM_2D) && 
+  if ((style == SQ_4N || style == SQ_8N || style == TRI ||
+       style == RANDOM_2D) &&
       domain->dimension != 2)
     error->all(FLERR,"Lattice style does not match dimension");
-  if ((style == SC_6N || style == SC_26N || style == FCC || 
+  if ((style == SC_6N || style == SC_26N || style == FCC ||
        style == BCC || style == BCC_OCTA || style == DIAMOND || style == FCC_OCTA_TETRA ||
-       style == RANDOM_3D) && 
+       style == RANDOM_3D) &&
       domain->dimension != 3)
     error->all(FLERR,"Lattice style does not match dimension");
 
@@ -105,7 +105,7 @@ Lattice::Lattice(SPPARKS *spk, int narg, char **arg) : Pointers(spk)
   } else if (style == BCC) {
     add_basis(0.0,0.0,0.0);
     add_basis(0.5,0.5,0.5);
-  } else if (style == BCC_OCTA) { // bcc/octa, 6 octa per unit cell  
+  } else if (style == BCC_OCTA) { // bcc/octa, 6 octa per unit cell
     add_basis(0.0,0.0,0.0);
     add_basis(0.5,0.5,0.5);
     add_basis(0.5,0.0,0.0);
@@ -278,7 +278,7 @@ int Lattice::id2color(tagint idsite, int delcolor)
     i = idsite % nx;
     j = (idsite%(nx*ny)) / nx;
     k = idsite / (nx*ny);
-    icolor = ncolor1d*ncolor1d*(k%ncolor1d) + 
+    icolor = ncolor1d*ncolor1d*(k%ncolor1d) +
       ncolor1d*(j%ncolor1d) + i%ncolor1d;
 
   } else if (style == FCC) {

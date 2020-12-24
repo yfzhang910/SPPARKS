@@ -35,7 +35,7 @@ enum{ZERO,FE,VACANCY,I1, I2, I3, I4, I5, I6};       // same as DiagErad; element
 #define DELTAEVENT 100000
 #define MAX2NN 6  // max 2NN of BCC lattice
 #define MAX3NN 12 // max 3NN of BCC lattice
-#define BIGNUMBER 1e18 // define a big number 
+#define BIGNUMBER 1e18 // define a big number
 
 /* ---------------------------------------------------------------------- */
 
@@ -50,30 +50,30 @@ AppErad::AppErad(SPPARKS *spk, int narg, char **arg) :
   allow_rejection = 0;
 
   engstyle = 1; //1 for 1NN interaction, 2 for 2NN interaction; default 1
-  concentrationflag = 0; //flag for concentration calculation  
-  percolationflag = 0; //flag for concentration calculation  
-  rhop = 1; // default only 1NN hop 
+  concentrationflag = 0; //flag for concentration calculation
+  percolationflag = 0; //flag for concentration calculation
+  rhop = 1; // default only 1NN hop
   rrecombine = 1; // recombination radius, default 1
-  cflag = clst_flag = 0; // if activate concentration dependent VV bond, default 0 (no); 
+  cflag = clst_flag = 0; // if activate concentration dependent VV bond, default 0 (no);
   if (narg < 1) error->all(FLERR,"Illegal app_style command");
   if (narg >= 2) engstyle = atoi(arg[1]);
   if (narg >= 3) rhop = atoi(arg[2]);
   if (narg >= 4) concentrationflag = atoi(arg[3]);
   if (narg >= 5) rrecombine = atoi(arg[4]);
-  if (rrecombine == 4) { 
+  if (rrecombine == 4) {
      if (narg < 6) error->all(FLERR,"Recombination radius is required but not supplied");
      rrec = atof(arg[5]);
      if(narg >= 7) cflag = atoi(arg[6]);
   } else if (narg >= 6) cflag = atoi(arg[5]);
   //if (concentrationflag) ndouble += concentrationflag;
   if (engstyle == 2) delpropensity += 1;// increase delpropensity for 2NN interaction
-  if (rhop == 3) delpropensity +=1; 
+  if (rhop == 3) delpropensity +=1;
 
-  ninteger ++; // for percolation  roc cluster analysis, test only  
+  ninteger ++; // for percolation  roc cluster analysis, test only
   create_arrays();
 
   dmigration = 3;
-  dratio = 1.0; 
+  dratio = 1.0;
   firsttime = 1;
   esites = NULL;
   echeck = NULL;
@@ -113,7 +113,7 @@ AppErad::AppErad(SPPARKS *spk, int narg, char **arg) :
   rbarrier = rrate = NULL;
 
   // arrays for ballistic mixing
-  bfreq = NULL; 
+  bfreq = NULL;
   time_old = time_new = NULL;
   min_bfreq = BIGNUMBER;
 
@@ -122,7 +122,7 @@ AppErad::AppErad(SPPARKS *spk, int narg, char **arg) :
   numneigh2 = numneigh3 = numneigh4 = NULL;
   neighbor2 = neighbor3 = neighbor4 = NULL;
 
-  // cluster analysis 
+  // cluster analysis
   ncelem = cid = csize = NULL;
 }
 
@@ -216,7 +216,7 @@ void AppErad::input_app(char *command, int narg, char **arg)
   int i,j,ibond;
   int nlattice = nlocal + nghost;
 
-  // initial coordiation of each atom, for recombination vector analysis, test only 
+  // initial coordiation of each atom, for recombination vector analysis, test only
   //memory->create(xyz0,nlocal,3,"app/erad:xyz0");
 
   // 1NN bond energy taken in the order of 11 12 ... 1N; 22 ... 2N; ...; NN
@@ -229,9 +229,9 @@ void AppErad::input_app(char *command, int narg, char **arg)
     memory->create(ebond1,nelement+1,nelement+1,"app/erad:ebond1");
     memory->create(hcount,nlattice,"app/erad:hcount");
     if(concentrationflag) {
-      memory->create(ct,nelement+1,"app/erad:ct"); //time averaged concentration 
-      memory->create(ct_new,nelement+1,"app/erad:ct_new"); //time averaged concentration 
-    } 
+      memory->create(ct,nelement+1,"app/erad:ct"); //time averaged concentration
+      memory->create(ct_new,nelement+1,"app/erad:ct_new"); //time averaged concentration
+    }
 
     if(narg != nelement*(nelement+1)/2+1) error->all(FLERR,"Illegal ebond command");
     nn1flag = 1;
@@ -281,7 +281,7 @@ void AppErad::input_app(char *command, int narg, char **arg)
 
     percolationflag = 1;
     if(narg != 1) error->all(FLERR,"illegal percolation command");
-    dpercolation = atof(arg[0]); // 2D or 3D 
+    dpercolation = atof(arg[0]); // 2D or 3D
   }
 
   // elastic moduli for stress calculation
@@ -401,16 +401,16 @@ void AppErad::input_app(char *command, int narg, char **arg)
     ballistic_flag = 1;
     grow_ballistic();
 
-    double dose_rate=atof(arg[0]);// dose rate 
-    bfreq[nballistic] = 1e12/nlocal/dose_rate; // time interval to introduce an FP 
+    double dose_rate=atof(arg[0]);// dose rate
+    bfreq[nballistic] = 1e12/nlocal/dose_rate; // time interval to introduce an FP
     if(min_bfreq > bfreq[nballistic]) min_bfreq = bfreq[nballistic];
     nballistic ++; // number of mixing events
   }
 
   else if (strcmp(command, "migration_vector") ==0) {
     if(nelement < 3 || narg != (nelement-2)*3 + 2) error->all(FLERR,"illegal migration vector command");
-    dmigration = atoi(arg[0]); // dimension of migration, default 3D  
-    dratio = atof(arg[1]); // ratio of anisotropic diffusion   
+    dmigration = atoi(arg[0]); // dimension of migration, default 3D
+    dratio = atof(arg[1]); // ratio of anisotropic diffusion
     j = 2;
     for (i=0; i<narg-2; i++) {
       int k = i % 3;
@@ -423,7 +423,7 @@ void AppErad::input_app(char *command, int narg, char **arg)
     }
   }
 
-  // meam hop steps before absorption by external sink 
+  // meam hop steps before absorption by external sink
   else if (strcmp(command, "mfp") ==0) {
 
     if (narg < 2 || narg % 2 == 0) error->all(FLERR,"Illegal mfp command");
@@ -433,20 +433,20 @@ void AppErad::input_app(char *command, int narg, char **arg)
     memory->create(nhmfp,nelement+1,"app/erad:nhmfp");
     memory->create(rhmfp,nelement+1,"app/erad:rhmfp");
 
-    for (i=0; i<=nelement; i++) mfp[i] = -1.0; 
+    for (i=0; i<=nelement; i++) mfp[i] = -1.0;
 
-    sigmamfp = atof(arg[0]); 
+    sigmamfp = atof(arg[0]);
     for (i=1; i<narg-1; i++) {
       if(i % 2 == 1) { j = atoi(arg[i]);
         mfp[j] = atof(arg[i+1]);
       }
     }
   }
-  // meam hop steps before absorption by external sink 
+  // meam hop steps before absorption by external sink
   else if (strcmp(command, "cluster") ==0) {
 
     if (narg < 2) error->all(FLERR,"Illegal mfp command");
-    
+
     clst_flag = 1;
     nctype = atoi(arg[0]);
     ncsize = atoi(arg[1]);;
@@ -466,7 +466,7 @@ void AppErad::grow_app()
 {
   type = iarray[0];   // lattice type; i1 in input
   element = iarray[1];  // element type; i2 in input
-  ipercolation = iarray[2]; // percolation analysis 
+  ipercolation = iarray[2]; // percolation analysis
   //aid = iarray[2]; // initially set as global ID, must use set i3 unique in command line
   //if(concentrationflag) disp = darray; // msd; zero initially
 }
@@ -495,11 +495,11 @@ void AppErad::init_app()
 
   int flag = 0;
   for (i = 0; i < nelement; i++) nsites_local[i] = 0;
-  // ecombine V and I if created on 1NN sites 
-  // setup neighbor list for large recombination redius 
+  // ecombine V and I if created on 1NN sites
+  // setup neighbor list for large recombination redius
   if(rrecombine == 4) recombine_list(rrec);
   for (i = 0; i < nelement; i++) nrecombine[i] = 0;
-  for (i = 0; i < nlocal; i++) recombine(i); 
+  for (i = 0; i < nlocal; i++) recombine(i);
 
   // site validity
   for (i = 0; i < nlocal; i++) {
@@ -532,7 +532,7 @@ void AppErad::init_app()
     }
   }
 
-  // initialize mfp calculations 
+  // initialize mfp calculations
   if(mfpflag) {
     for (i = 0; i < nlocal+nghost; i++) hcount[i] = 0;
     for (i = 0; i <= nelement; i++) {
@@ -540,19 +540,19 @@ void AppErad::init_app()
         nhmfp[i] = 0;
     }
 
-    varmfp = 2.0*sigmamfp; //sqrt(2*pi)*sigma 
+    varmfp = 2.0*sigmamfp; //sqrt(2*pi)*sigma
     sigmamfp *= sigmamfp;
-    sigmamfp *= 2.0; //2*sigma^2   
+    sigmamfp *= 2.0; //2*sigma^2
   }
 
    //initialize the time_list for ballistic mixing
   if(concentrationflag) {
     //concentration_field();
-    dt_new = 0.0; 
+    dt_new = 0.0;
     for(i = 0; i <= nelement; i ++) {
-       ct[i] = 0.0; 
-       ct_new[i] = 0.0; 
-    } 
+       ct[i] = 0.0;
+       ct_new[i] = 0.0;
+    }
     //for(i = 0; i < concentrationflag; i ++) {
     //   for(j = 0; j < nlocal; j++){
     //      disp[i][j] = 0.0;
@@ -560,15 +560,15 @@ void AppErad::init_app()
     //}
   }
 
-  // initialize percolation list 
+  // initialize percolation list
   if(percolationflag) {
     for (i = 0; i < nlocal; i++) ipercolation[i] = 0;
-  }  
+  }
 
-  /*/ initialize recombination vector analysis arrays, test only 
+  /*/ initialize recombination vector analysis arrays, test only
   for (i = 0; i < nlocal; i ++) {
   for (j = 0; j < 3; j ++) {
-      xyz0[i][j] = xyz[i][j]; 
+      xyz0[i][j] = xyz[i][j];
   }
   }
   for (i = 0; i < 361; i ++) {
@@ -603,8 +603,8 @@ void AppErad::setup_app()
 }
 
 /* ----------------------------------------------------------------------
-   define 2NN and 3NN list based on 1NN list. In BCC lattice, each 2NN of 
-   site i is shared by 4 1NNs of site i as their 1NNs, and 3NN by 2. 
+   define 2NN and 3NN list based on 1NN list. In BCC lattice, each 2NN of
+   site i is shared by 4 1NNs of site i as their 1NNs, and 3NN by 2.
 ------------------------------------------------------------------------- */
 
 void AppErad::define_2NN()
@@ -614,10 +614,10 @@ void AppErad::define_2NN()
 
   ndimension = domain->dimension;
   n2freq = 4;
-  if(ndimension == 2) n2freq = 2; // for both square and hex  
+  if(ndimension == 2) n2freq = 2; // for both square and hex
   n3freq = 2;
   if(ndimension == 2) n3freq = 1;
- 
+
   memory->create(numneigh2,nlocal+nghost,"app, numneigh2");
   memory->create(neighbor2,nlocal+nghost,MAX2NN,"app, neighbor2");
   if(rhop == 3 || rrecombine == 3) memory->create(numneigh3,nlocal+nghost,"app, numneigh3");
@@ -646,14 +646,14 @@ void AppErad::define_2NN()
     }
 
     for (j = 0; j < ncandidate; j++) {
-      if(frequency[j] < 0) continue; // jd already observed earlier  
+      if(frequency[j] < 0) continue; // jd already observed earlier
       jd = candidate[j];
       frequency[j]++;
       for (k = j+1; k < ncandidate; k++) {
         kd = candidate[k];
         if(kd == jd) {frequency[j]++; frequency[k] = -1;}
       }
-    } 
+    }
 
     for (j = 0; j < ncandidate; j++) {
       jd = candidate[j];
@@ -667,8 +667,8 @@ void AppErad::define_2NN()
         if (n2nn == MAX2NN) error->all(FLERR, "Two many 2nd nearest neighbors defined, please expand the simulation cell dimensions or MAX2NN");
         neighbor2[i][n2nn] = jd;
         n2nn++; // selected if shared by 4 NNs
-      } 
-      else if ((rhop == 3 || rrecombine == 3) && frequency[j] == n3freq) { // 3NN 
+      }
+      else if ((rhop == 3 || rrecombine == 3) && frequency[j] == n3freq) { // 3NN
         if (n3nn == MAX3NN) error->all(FLERR, "Two many 3rd nearest neighbors defined, please expand the simulation cell dimensions or MAX3NN");
         neighbor3[i][n3nn] = jd;
         n3nn++; // selected if shared by 4 NNs
@@ -681,27 +681,27 @@ void AppErad::define_2NN()
 
 /* ----------------------------------------------------------------------
    setup neighbor list for large recombination radius
-   currently for serial runs only  
+   currently for serial runs only
 ------------------------------------------------------------------------- */
 
 void AppErad::recombine_list(double rrec)
 {
-  int i,j,id; 
-  int ****ibox; 
+  int i,j,id;
+  int ****ibox;
   int ncell[3];
   int index[3],cell[3];
   double rij[4],lprd[3],xlo[3],rcell[3];
 
   int max4nn = 0;
   rrec *= rrec;
-  // calculate # of neighbors within rrec 
+  // calculate # of neighbors within rrec
   for(i = 0; i < nlocal; i++) {
      distanceIJ(i,0,rij);
      rij[3] = rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2];
      if(rij[3] > rrec) continue;
      max4nn ++;
-  }   
- 
+  }
+
   memory->create(numneigh4,nlocal,"app/erad, numneigh4");
   memory->create(neighbor4,nlocal,max4nn,"app/erad, neighbor4");
 
@@ -717,8 +717,8 @@ void AppErad::recombine_list(double rrec)
   for(j = 0; j < 3; j++) {
      ncell[j] = static_cast<int> (lprd[j] / sqrt(rrec));
      rcell[j] = lprd[j]/ncell[j];
-  }  
-  
+  }
+
   xlo[0] = domain->boxxlo;
   xlo[1] = domain->boxylo;
   xlo[2] = domain->boxzlo;
@@ -729,39 +729,39 @@ void AppErad::recombine_list(double rrec)
      ibox[index[0]][index[1]][index[2]][0] ++;
      int k = ibox[index[0]][index[1]][index[2]][0];
      ibox[index[0]][index[1]][index[2]][k] = i;
-  } 
+  }
 
   for(i = 0; i < nlocal; i++) {
      for(j = 0; j < 3; j++) index[j] = static_cast<int>(xyz[i][j] - xlo[j]) / rcell[j];
-     
-     for(int m = -1; m < 2; m++){  
-     for(int n = -1; n < 2; n++){  
-     for(int l = -1; l < 2; l++){ 
+
+     for(int m = -1; m < 2; m++){
+     for(int n = -1; n < 2; n++){
+     for(int l = -1; l < 2; l++){
         cell[0] = index[0] + m;
         cell[1] = index[1] + n;
         cell[2] = index[2] + l;
-  
+
         for(j = 0; j < 3; j++) {
-           if(cell[j] < 0) cell[j] = ncell[j]-1; 
-           if(cell[j] > ncell[j]-1) cell[j] = 0; 
+           if(cell[j] < 0) cell[j] = ncell[j]-1;
+           if(cell[j] > ncell[j]-1) cell[j] = 0;
         }
 
         for(j = 1; j <= ibox[cell[0]][cell[1]][cell[2]][0]; j ++){
            id = ibox[cell[0]][cell[1]][cell[2]][j];
            distanceIJ(i,id,rij);
            rij[3] = rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2];
-           if(rij[3] > rrec) continue; 
-           neighbor4[i][numneigh4[i]] = id; 
+           if(rij[3] > rrec) continue;
+           neighbor4[i][numneigh4[i]] = id;
            numneigh4[i] ++;
-        } 
+        }
      }
      }
      }
   }
 
-  memory->destroy(ibox); 
+  memory->destroy(ibox);
   fprintf(screen,"End setup recombination list \n");
-}  
+}
 
 /* ----------------------------------------------------------------------
    define virtual function site_energy(int)
@@ -782,7 +782,7 @@ double AppErad::sites_energy(int i, int estyle)
   double eng = 0.0;
   double ci, cj;
 
-  if(estyle == 0) return eng; // no thermodynamic interaction 
+  if(estyle == 0) return eng; // no thermodynamic interaction
   //energy from 1NN bonds
   n1nn = numneigh[i];  //num of 1NN
   ci = cj = 0.0;
@@ -790,11 +790,11 @@ double AppErad::sites_energy(int i, int estyle)
   for (j = 0; j < n1nn; j++) {
     jd = neighbor[i][j];
     if(cflag && iele == element[jd] && iele == VACANCY) {
-      if(ci == 0.0) ci = site_concentration(i,1); 
+      if(ci == 0.0) ci = site_concentration(i,1);
       cj = site_concentration(jd,1);
 
-      eng += ci*cj*ebond1[iele][element[jd]]; 
-    } else 
+      eng += ci*cj*ebond1[iele][element[jd]];
+    } else
     eng += ebond1[iele][element[jd]];
   }
 
@@ -833,18 +833,18 @@ double AppErad::elastic_energy(int i, int itype)
 }
 
 /* ----------------------------------------------------------------------
-  compute local concentration to adjust V-V bond energy  
+  compute local concentration to adjust V-V bond energy
 ------------------------------------------------------------------------- */
 
 double AppErad::site_concentration(int i, int estyle)
-{ 
+{
   double ci = 0.0;
- 
+
   if(estyle == 1) {
     int n1nn = numneigh[i];  //num of 1NN
     for(int j = 0; j < n1nn; j++) {
        int jd = neighbor[i][j];
-       if(element[jd]!=VACANCY) ci += 1.0/(n1nn-1); 
+       if(element[jd]!=VACANCY) ci += 1.0/(n1nn-1);
     }
     return ci;
   }
@@ -871,68 +871,68 @@ double AppErad::site_SP_energy(int i, int j, int estyle)
 
   int iele = element[i];
   int jele = element[j];
-  // no Fe hop event  
+  // no Fe hop event
   if(iele < VACANCY) return -1.0;
   // no V-V or V-I or I-I switch
   if(jele >= VACANCY) return -1.0;
 
-  // 1D % 2D SIA hop; no SIA bonding currently 
+  // 1D % 2D SIA hop; no SIA bonding currently
   if(iele > VACANCY) {
-    double ran1 = ranerad->uniform(); 
+    double ran1 = ranerad->uniform();
     if(dmigration < 3 && ran1 < dratio) {
       double dij[4];
       dij[0] = dij[1] = dij[2] = 0.0;
-      distanceIJ(i,j,dij);  
+      distanceIJ(i,j,dij);
       dij[3] = dij[1]*dij[1] + dij[2]*dij[2] + dij[0] * dij[0];
       double prdt = dij[1]*Vmig[iele][1] + dij[2]*Vmig[iele][2] + dij[0]*Vmig[iele][0];
       if (dmigration == 1 && prdt*prdt/dij[3]/Vmig[iele][3] < 0.99) return -1.0; // 1D diffusion
       if (dmigration == 2 && prdt*prdt/dij[3]/Vmig[iele][3] > 0.01) return -1.0; // 2D diffusion
     }
 
-    return mbarrier[iele]; 
-  } 
+    return mbarrier[iele];
+  }
 
-  // Chenge in bonding energy due to vavancy move  
+  // Chenge in bonding energy due to vavancy move
   eng0i = sites_energy(i,estyle); //broken bond with i initially,
   eng0j = sites_energy(j,estyle); //broken bond with j initially
 
-  // switch the element and recalculate the site energy 
+  // switch the element and recalculate the site energy
   element[i] = jele;
-  element[j] = iele; 
+  element[j] = iele;
   eng1i = sites_energy(i,estyle); //broken bond with i initially,
   eng1j = sites_energy(j,estyle); //broken bond with j initially
 
-  // switch back 
-  element[j] = jele; 
-  element[i] = iele; 
-    
+  // switch back
+  element[j] = jele;
+  element[i] = iele;
+
 /*
-  int jdele; 
-  //bond formed between j and i's neighbors after switch, j can not be a vacancy 
+  int jdele;
+  //bond formed between j and i's neighbors after switch, j can not be a vacancy
   for (m = 0; m < numneigh[i]; m++) {
     jd = neighbor[i][m];
-    jdele = element[jd];   
-    if (jd == j) jdele = element[i]; // i & j switched  
+    jdele = element[jd];
+    if (jd == j) jdele = element[i]; // i & j switched
     eng1i += ebond1[jele][jdele];
   }
 
   if (estyle == 2) {
     for(m = 0; m < numneigh2[i]; m++) {
       jd = neighbor2[i][m];
-      jdele = element[jd];   
-      if (jd == j) jdele = element[i]; // i & j switched  
+      jdele = element[jd];
+      if (jd == j) jdele = element[i]; // i & j switched
       eng1i += ebond2[jele][jdele];
     }
   }
 
-  //bond formed between i and j's neighbors after switch, i is a vavancy 
-  if(cflag) ci = site_concentration(i,1); 
+  //bond formed between i and j's neighbors after switch, i is a vavancy
+  if(cflag) ci = site_concentration(i,1);
   for (m = 0; m < numneigh[j]; m++) {
     jd = neighbor[j][m];
-    jdele = element[jd];   
-    if (jd == i) jdele = element[j]; // i & j switched  
+    jdele = element[jd];
+    if (jd == i) jdele = element[j]; // i & j switched
 
-    if(cflag && jdele == VACANCY) { // only CC bond are concentration dependendent 
+    if(cflag && jdele == VACANCY) { // only CC bond are concentration dependendent
       cj = site_concentration(jd,1);
       eng1j += ci*cj*ebond1[iele][jeele];
     } else {
@@ -941,11 +941,11 @@ double AppErad::site_SP_energy(int i, int j, int estyle)
   }
 
   if (estyle == 2){
-    if(cflag) ci = site_concentration(i,2); 
+    if(cflag) ci = site_concentration(i,2);
     for (m = 0; m < numneigh2[j]; m++) {
       jd = neighbor2[j][m];
-      jdele = element[jd];   
-      if (jd == i) jdele = element[j]; // i & j switched  
+      jdele = element[jd];
+      if (jd == i) jdele = element[j]; // i & j switched
 
       if(cflag && jdele == VACANCY) {
         cj = site_concentration(jd,2);
@@ -1011,7 +1011,7 @@ double AppErad::site_propensity(int i)
   // propensity calculated in site_SP_energy();
   if (element[i] < VACANCY) return prob_reaction;
 
-  // for hop events, vacancy and SIA only 
+  // for hop events, vacancy and SIA only
   // propensity calculated in site_SP_energy();
   for (j = 0; j < numneigh[i]; j++) {
       jid = neighbor[i][j];
@@ -1024,7 +1024,7 @@ double AppErad::site_propensity(int i)
 
   if (rhop < 2) return prob_hop + prob_reaction;
 
-  // 2NN hop for <100> 1D SIA diffusion in bcc 
+  // 2NN hop for <100> 1D SIA diffusion in bcc
   for (j = 0; j < numneigh2[i]; j++) {
       jid = neighbor2[i][j];
       ebarrier = site_SP_energy(i,jid,engstyle); // diffusion barrier
@@ -1036,7 +1036,7 @@ double AppErad::site_propensity(int i)
 
   if (rhop < 3) return prob_hop + prob_reaction;
 
-  // 3NN hop for <110> 1D SIA diffusion in bcc 
+  // 3NN hop for <110> 1D SIA diffusion in bcc
   for (j = 0; j < numneigh3[i]; j++) {
       jid = neighbor3[i][j];
       ebarrier = site_SP_energy(i,jid,engstyle); // diffusion barrier
@@ -1079,14 +1079,14 @@ void AppErad::site_event(int i, class RandomPark *random)
   j = events[ievent].jpartner;
 
   // switch element between site i and jpartner for hop diffusion
-  if(rstyle == 1) { 
+  if(rstyle == 1) {
     k = element[i];
     hcount[i] ++;
 
     element[i] = element[j];
     element[j] = k;
 
-    /*// switch global atomic id for recombination vector analysis, test only 
+    /*// switch global atomic id for recombination vector analysis, test only
     k = aid[i];
     aid[i] = aid[j];
     aid[j] = aid[i];
@@ -1105,32 +1105,32 @@ void AppErad::site_event(int i, class RandomPark *random)
     // end test */
 
     if(mfpflag && mfp[element[j]] > 0.0) {
-      k = hcount[i]; 
-      hcount[i] = hcount[j]; 
-      hcount[j] = k; 
+      k = hcount[i];
+      hcount[i] = hcount[j];
+      hcount[j] = k;
 
       //double r1 = (hcount[j] - mfp[element[j]]);
-      //double fx = exp(-r1*r1/sigmamfp)/varmfp; 
+      //double fx = exp(-r1*r1/sigmamfp)/varmfp;
       //if(ranerad->uniform() < fx) {
-      if(hcount[j] > mfp[element[j]]) { 
-        nhmfp[element[j]] ++; 
-        rhmfp[element[j]] += hcount[j]; 
- 
-        nsites_local[element[j]-1] --;  
-        nsites_local[FE-1] ++;  
-        element[j] = FE; //absorption 
-        hcount[j] = 0; 
-      }
-    } 
+      if(hcount[j] > mfp[element[j]]) {
+        nhmfp[element[j]] ++;
+        rhmfp[element[j]] += hcount[j];
 
-  } else { // reaction, element[i]<-j; rstyle 2  
+        nsites_local[element[j]-1] --;
+        nsites_local[FE-1] ++;
+        element[j] = FE; //absorption
+        hcount[j] = 0;
+      }
+    }
+
+  } else { // reaction, element[i]<-j; rstyle 2
     k = element[i];
     element[i] = j;
     rcount[which] ++;
     nsites_local[k-1] --;
     nsites_local[j-1] ++;
 
-    if(mfpflag) hcount[i] = 0; 
+    if(mfpflag) hcount[i] = 0;
     // update reaction target number
     for(ii = 0; ii < nreaction; ii++) {
       if(routput[ii] != j) continue;
@@ -1139,25 +1139,25 @@ void AppErad::site_event(int i, class RandomPark *random)
   }
 
   // perform zero_barrier events: absorption and recombination
-  int rid = recombine(i); // recombine site i with its neighbor rid 
+  int rid = recombine(i); // recombine site i with its neighbor rid
   if(rid >= 0) update_propensity(rid);
- 
-  // calculate the vector between the two recombined site before diffusing into recombination radius 
-  // if(rid >= 0 && rstyle == 1) vec_recombine(i,rid); // i was at j site before diffusion 
- 
+
+  // calculate the vector between the two recombined site before diffusing into recombination radius
+  // if(rid >= 0 && rstyle == 1) vec_recombine(i,rid); // i was at j site before diffusion
+
   if(rstyle == 1) {
-    //recombine j with its neighbors too after hopping; 
-    int rid = recombine(j); // recombine site i with its neighbor rid 
+    //recombine j with its neighbors too after hopping;
+    int rid = recombine(j); // recombine site i with its neighbor rid
     if(rid >= 0) update_propensity(rid);
-  
-    // calculate the vector between the two recombined site before diffusing into recombination radius 
-    //if(rid >= 0) vec_recombine(j,rid); // j was at i site before diffusion 
+
+    // calculate the vector between the two recombined site before diffusing into recombination radius
+    //if(rid >= 0) vec_recombine(j,rid); // j was at i site before diffusion
 
     //sink absorption of element[j] after hopping,for hop only since no element produced at its sinks
     if(sink_flag && isink[i][element[i]-1] == 1)   {absorption(i); }
     if(sink_flag && isink[j][element[j]-1] == 1)   {absorption(j); }
-    //if(fabs(xyz[j][2]) < 2.0) fprintf(screen,"i %d %d %d, %f \n",j, element[j], isink[16791][2],xyz[j][2]); 
-  } 
+    //if(fabs(xyz[j][2]) < 2.0) fprintf(screen,"i %d %d %d, %f \n",j, element[j], isink[16791][2],xyz[j][2]);
+  }
 
   // compute propensity changes for participating sites i & j and their neighbors
   update_propensity(i);
@@ -1176,7 +1176,7 @@ void AppErad::site_event(int i, class RandomPark *random)
 }
 
 /* ----------------------------------------------------------------------
-   absorption of an element at site i  
+   absorption of an element at site i
 ------------------------------------------------------------------------- */
 void AppErad::absorption(int i)
 {
@@ -1189,7 +1189,7 @@ void AppErad::absorption(int i)
      nsites_local[FE-1] ++;
      element[i] = FE;
 
-     if(mfpflag) hcount[i] = 0; 
+     if(mfpflag) hcount[i] = 0;
      // update reaction target number
      if(reaction_flag == 1) {
      for(int ii = 0; ii < nreaction; ii++) {
@@ -1201,11 +1201,11 @@ void AppErad::absorption(int i)
 }
 
 /* ----------------------------------------------------------------------
-   calculate the vector between two recombined atoms i and j in vector form. 
+   calculate the vector between two recombined atoms i and j in vector form.
 ------------------------------------------------------------------------- */
 /*void AppErad::vec_recombine (int i, int j)
-{  
-   double dij[3], lprd[3], phi, eta; 
+{
+   double dij[3], lprd[3], phi, eta;
    int m, n, periodicity[3];
 
    periodicity[0] = domain->xperiodic;
@@ -1215,43 +1215,43 @@ void AppErad::absorption(int i)
    lprd[1] = domain->yprd;
    lprd[2] = domain->zprd;
 
-   for (int k = 0; k < 3; k++) { 
+   for (int k = 0; k < 3; k++) {
        dij[k] = xyz0[j][k] - xyz0[i][k];
        if (periodicity[k] && dij[k] >= lprd[k]/2.0) dij[k] -= lprd[k];
        if (periodicity[k] && dij[k] <= -lprd[k]/2.0) dij[k] += lprd[k];
-   } 
-  
+   }
+
    double x = dij[0];
    double y = dij[1];
    double z = dij[2];
    double xy = sqrt(x*x + y*y);
-   double xyz = sqrt(xy*xy+z*z); 
- 
-   if(xyz > 0.0) { // do not count recombination in short distance to reduce initial effect 
-     eta = phi = 0.0; 
-     double pi = acos(-1.0); 
-     if (xy == 0) { 
+   double xyz = sqrt(xy*xy+z*z);
+
+   if(xyz > 0.0) { // do not count recombination in short distance to reduce initial effect
+     eta = phi = 0.0;
+     double pi = acos(-1.0);
+     if (xy == 0) {
         phi = 0;
-        eta = pi/2; 
+        eta = pi/2;
         if (z <= 0) eta = -pi/2;
      } else {
         eta = atan(z/xy);
         phi = acos(x/xy);
-        if(y < 0) phi += pi; 
-     }  
+        if(y < 0) phi += pi;
+     }
 
      m = static_cast<int>(phi*180/pi);
      n = static_cast<int>((eta+pi/2.0)*180/pi);
- 
-     //fprintf(screen, "%d %d %d %d %f %f vec_rec \n",i, j, m, n, x, y); 
-     if(m<0 || n<0) error->all(FLERR,"recombination vector calculated wrongly!");    
+
+     //fprintf(screen, "%d %d %d %d %f %f vec_rec \n",i, j, m, n, x, y);
+     if(m<0 || n<0) error->all(FLERR,"recombination vector calculated wrongly!");
      reccount[m][n] ++;
    }
 
 }*/
 
 /* ----------------------------------------------------------------------
-   calculate the distance between i and j in vector form. 
+   calculate the distance between i and j in vector form.
 ------------------------------------------------------------------------- */
 void AppErad::distanceIJ(int i, int j, double dij[3])
 {
@@ -1270,24 +1270,24 @@ void AppErad::distanceIJ(int i, int j, double dij[3])
        dij[k] = xyz[j][k] - xyz[i][k];
        if (periodicity[k] && dij[k] >= lprd[k]/2.0) dij[k] -= lprd[k];
        if (periodicity[k] && dij[k] <= -lprd[k]/2.0) dij[k] += lprd[k];
-   } 
+   }
 }
 /* ----------------------------------------------------------------------
    recombine site i with one of its neighbor if needed.
-   return site id which just recombined with i to update propensity.  
-   reset target numbers of reactions if recombined 
+   return site id which just recombined with i to update propensity.
+   reset target numbers of reactions if recombined
 ------------------------------------------------------------------------- */
 int AppErad::recombine(int i)
-{ 
-  // recombine by radius 
-  if(rrecombine == 4) { 
+{
+  // recombine by radius
+  if(rrecombine == 4) {
     for (int n = 0; n < numneigh4[i]; n++) {
         int m = neighbor4[i][n];
 
-        if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy 
-        if(element[i] <= VACANCY && element[m] <= VACANCY) continue; // None SIA 
-        //if(element[m] == VACANCY && element[i] <= VACANCY) return; // None SIA 
-  
+        if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy
+        if(element[i] <= VACANCY && element[m] <= VACANCY) continue; // None SIA
+        //if(element[m] == VACANCY && element[i] <= VACANCY) return; // None SIA
+
         nrecombine[element[i]-1] ++;
         nrecombine[element[m]-1] ++;
         nsites_local[element[i]-1] --;
@@ -1298,7 +1298,7 @@ int AppErad::recombine(int i)
         element[m] = FE;
 
         if(mfpflag) {hcount[i] = 0; hcount[m] = 0;}
-  
+
        // update reaction target number
        if(reaction_flag == 1) {
          for(int k = 0; k < nreaction; k++) {
@@ -1315,10 +1315,10 @@ int AppErad::recombine(int i)
   for (int n = 0; n < numneigh[i]; n++) {
       int m = neighbor[i][n];
 
-      if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy 
-      if(element[i] <= VACANCY && element[m] <= VACANCY) continue; // None SIA 
-      //if(element[m] == VACANCY && element[i] <= VACANCY) return; // None SIA 
-         
+      if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy
+      if(element[i] <= VACANCY && element[m] <= VACANCY) continue; // None SIA
+      //if(element[m] == VACANCY && element[i] <= VACANCY) return; // None SIA
+
       nrecombine[element[i]-1] ++;
       nrecombine[element[m]-1] ++;
       nsites_local[element[i]-1] --;
@@ -1328,26 +1328,26 @@ int AppErad::recombine(int i)
       element[i] = FE;
       element[m] = FE;
 
-      if(mfpflag) {hcount[i] = 0; hcount[m] = 0;} 
-      
+      if(mfpflag) {hcount[i] = 0; hcount[m] = 0;}
+
      // update reaction target number
      if(reaction_flag == 1) {
        for(int k = 0; k < nreaction; k++) {
        if(routput[k] == element[i] || routput[k] == element[m])  target_local[k] ++;
        }
      }
-     //fprintf(screen, "%d %d rec \n",i, m); 
-     return m;  
+     //fprintf(screen, "%d %d rec \n",i, m);
+     return m;
   }
 
-  // 2NN recombination 
+  // 2NN recombination
   //if (rrecombine < 2) return -1; // no recombination takes place
   for (int n = 0; n < numneigh2[i]; n++) {
       int m = neighbor2[i][n];
 
-      if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy 
-      if(element[i] <= VACANCY && element[m] <= VACANCY) continue; // None SIA 
-         
+      if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy
+      if(element[i] <= VACANCY && element[m] <= VACANCY) continue; // None SIA
+
       nrecombine[element[i]-1] ++;
       nrecombine[element[m]-1] ++;
       nsites_local[element[i]-1] --;
@@ -1357,8 +1357,8 @@ int AppErad::recombine(int i)
       element[i] = FE;
       element[m] = FE;
 
-      if(mfpflag) {hcount[i] = 0; hcount[m] = 0;} 
-      
+      if(mfpflag) {hcount[i] = 0; hcount[m] = 0;}
+
      // update reaction target number
      if(reaction_flag == 1) {
        for(int k = 0; k < nreaction; k++) {
@@ -1366,17 +1366,17 @@ int AppErad::recombine(int i)
        }
      }
 
-     return m;  
+     return m;
   }
-  
-  // 3NN recombination 
-  if (rrecombine < 3) return -1; 
+
+  // 3NN recombination
+  if (rrecombine < 3) return -1;
   for (int n = 0; n < numneigh3[i]; n++) {
       int m = neighbor3[i][n];
 
-      if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy 
-      if(element[i] <= VACANCY && element[m] <= VACANCY) continue; // None SIA 
-         
+      if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy
+      if(element[i] <= VACANCY && element[m] <= VACANCY) continue; // None SIA
+
       nrecombine[element[i]-1] ++;
       nrecombine[element[m]-1] ++;
       nsites_local[element[i]-1] --;
@@ -1386,8 +1386,8 @@ int AppErad::recombine(int i)
       element[i] = FE;
       element[m] = FE;
 
-      if(mfpflag) {hcount[i] = 0; hcount[m] = 0;} 
-      
+      if(mfpflag) {hcount[i] = 0; hcount[m] = 0;}
+
      // update reaction target number
      if(reaction_flag == 1) {
        for(int k = 0; k < nreaction; k++) {
@@ -1395,10 +1395,10 @@ int AppErad::recombine(int i)
        }
      }
 
-     return m;  
+     return m;
   }
 
-  return -1; 
+  return -1;
 }
 
 /* ----------------------------------------------------------------------
@@ -1574,9 +1574,9 @@ void AppErad::add_event(int i, int j, int rstyle, int which, double propensity)
 void AppErad::sia_concentration(double t)
 {
   double ci = 0.0;
-  for (int i = 0; i < nlocal; i ++ ) {if(element[i] >= I1) ci ++; }  
+  for (int i = 0; i < nlocal; i ++ ) {if(element[i] >= I1) ci ++; }
   csia += ci*t/nlocal;
-  
+
 }
 
 /* ----------------------------------------------------------------------
@@ -1599,54 +1599,54 @@ void AppErad::check_ballistic(double t)
 }
 
 /* ----------------------------------------------------------------------
-  Create Frenkel pairs randomly. may need to scale the dose rate 
-  by the # of processors when  work in parallel   
+  Create Frenkel pairs randomly. may need to scale the dose rate
+  by the # of processors when  work in parallel
 ------------------------------------------------------------------------- */
 
 void AppErad::ballistic(int n)
 {
   // creat an vacancy
-  if(nsites_local[FE-1] == 0) error->all(FLERR, "No matrix sites available for FP generation!");      
+  if(nsites_local[FE-1] == 0) error->all(FLERR, "No matrix sites available for FP generation!");
 
-  nFPair ++;   
-  int findv = 1;   
-  while (findv) { 
-    int id = static_cast<int> (nlocal*ranerad->uniform()); 
-    if(id < nlocal && element[id] == 1) { 
-      element[id] = VACANCY; 
-      nsites_local[VACANCY-1] ++; 
-      nsites_local[FE-1] --;     
-      
-      // recalculate the propensity if defects are generated 
+  nFPair ++;
+  int findv = 1;
+  while (findv) {
+    int id = static_cast<int> (nlocal*ranerad->uniform());
+    if(id < nlocal && element[id] == 1) {
+      element[id] = VACANCY;
+      nsites_local[VACANCY-1] ++;
+      nsites_local[FE-1] --;
+
+      // recalculate the propensity if defects are generated
       update_propensity(id);
-      findv = 0; 
+      findv = 0;
     }
-  } 
-  
-  //return; // spk_v no interstitial creation for test 
-  //create an interstitial  
-  int findi = 1;   
-  while (findi) { 
-    int id = static_cast<int> (nlocal*ranerad->uniform()); 
-    if(id < nlocal && element[id] == 1) { 
-      if(nelement == VACANCY) error->all(FLERR, "simulation contains no SIAs"); 
-      double dx = 1.0/(nelement - VACANCY);  // equal probability for each type of SIA 
-      double r1 = ranerad->uniform(); 
+  }
 
-      for (int i = 1; i <= nelement - VACANCY; i++) { 
-          if(r1 < i*dx) { 
-            element[id] = VACANCY + i; 
-            nsites_local[VACANCY+i-1] ++; 
-            nsites_local[FE-1] --;  
-   
-            // recalculate the propensity if defects are generated 
-            update_propensity(id);      
+  //return; // spk_v no interstitial creation for test
+  //create an interstitial
+  int findi = 1;
+  while (findi) {
+    int id = static_cast<int> (nlocal*ranerad->uniform());
+    if(id < nlocal && element[id] == 1) {
+      if(nelement == VACANCY) error->all(FLERR, "simulation contains no SIAs");
+      double dx = 1.0/(nelement - VACANCY);  // equal probability for each type of SIA
+      double r1 = ranerad->uniform();
+
+      for (int i = 1; i <= nelement - VACANCY; i++) {
+          if(r1 < i*dx) {
+            element[id] = VACANCY + i;
+            nsites_local[VACANCY+i-1] ++;
+            nsites_local[FE-1] --;
+
+            // recalculate the propensity if defects are generated
+            update_propensity(id);
             findi = 0;
-            return;  
-          } 
-      } 
+            return;
+          }
+      }
     }
-  }  
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -1667,89 +1667,89 @@ double AppErad::total_energy( )
 }
 
 /* ----------------------------------------------------------------------
-  calculating percolation rate  
+  calculating percolation rate
 ------------------------------------------------------------------------- */
 double AppErad::percolation( )
 {
-  int i,j,jd,nvac,nperco,nnew; 
+  int i,j,jd,nvac,nperco,nnew;
   double prate = 0.0;
   double xlo[3],xhi[3];
 
-  xlo[0] = domain->boxxlo; 
-  xhi[0] = domain->boxxhi; 
-  xlo[1] = domain->boxylo; 
-  xhi[1] = domain->boxyhi; 
-  xlo[2] = domain->boxzlo; 
-  xhi[2] = domain->boxzhi; 
+  xlo[0] = domain->boxxlo;
+  xhi[0] = domain->boxxhi;
+  xlo[1] = domain->boxylo;
+  xhi[1] = domain->boxyhi;
+  xlo[2] = domain->boxzlo;
+  xhi[2] = domain->boxzhi;
 
-  //reinitializa each time of calculations 
-  nvac = nperco = 0; 
+  //reinitializa each time of calculations
+  nvac = nperco = 0;
   for(i = 0; i < nlocal; i++) ipercolation[i] = 0;
- 
-  // find vacancies on boundaries 
-  for(i = 0; i < nlocal; i++) { 
-     if(element[i] != VACANCY) continue;  
-     nvac ++; 
 
-     if(xyz[i][0]-xlo[0] == 0 || xyz[i][0]-xhi[0] == 0 || xyz[i][1]-xlo[1] == 0 || xyz[i][1]-xhi[1] == 0) {       
+  // find vacancies on boundaries
+  for(i = 0; i < nlocal; i++) {
+     if(element[i] != VACANCY) continue;
+     nvac ++;
+
+     if(xyz[i][0]-xlo[0] == 0 || xyz[i][0]-xhi[0] == 0 || xyz[i][1]-xlo[1] == 0 || xyz[i][1]-xhi[1] == 0) {
        ipercolation[i] = 1;
        nperco ++;
      }
 
-     if(dpercolation == 3 && ipercolation[i] == 0 && (xyz[i][2]-xlo[2] == 0 || xyz[i][2]-xhi[2] == 0)) {      
+     if(dpercolation == 3 && ipercolation[i] == 0 && (xyz[i][2]-xlo[2] == 0 || xyz[i][2]-xhi[2] == 0)) {
        ipercolation[i] = 1;
        nperco ++;
      }
   }
 
-  //calculate transient percolation rate until no percolated vacancies can be found  
-  nnew = 1; 
+  //calculate transient percolation rate until no percolated vacancies can be found
+  nnew = 1;
   ivisit = new int[nlocal];
   for(i = 0; i < nlocal; i++) ivisit[i] = 0;
- 
+
   while(nnew > 0) {
-     nnew = 0; 
-     for(i = 0; i < nlocal; i++) { 
-        if(ipercolation[i] != 1) continue;  
+     nnew = 0;
+     for(i = 0; i < nlocal; i++) {
+        if(ipercolation[i] != 1) continue;
         if(ivisit[i] == 1) continue;
-        for(j = 0; j < numneigh[i]; j++) { 
+        for(j = 0; j < numneigh[i]; j++) {
            jd = neighbor[i][j];
            if(element[jd] != VACANCY || ipercolation[jd] == 1) continue;
-           nnew ++; 
+           nnew ++;
            ipercolation[jd] = 1;
-           nperco ++; 
+           nperco ++;
         }
         ivisit[i] = 1;
-     } 
+     }
   }
 
   delete [] ivisit;
-  if(nvac > 0) prate = nperco*1.0/nvac; 
+  if(nvac > 0) prate = nperco*1.0/nvac;
   return prate;
 }
 
 /* ----------------------------------------------------------------------
-  Integrate c*t at each site for fractional occupancy over time 
+  Integrate c*t at each site for fractional occupancy over time
 ------------------------------------------------------------------------- */
 void AppErad::concentration_field(double dt)
 {
-  dt_new += dt; // update time interval 
+  dt_new += dt; // update time interval
   for(int i = 0; i < nlocal; i++) {
      //disp[element[i]][i] += dt;
-     ct_new[element[i]] += dt;      
+     ct_new[element[i]] += dt;
   } // c[element[i]][i] = 1; disp += c[element[i][i] * dt  }
 }
 
 /* ----------------------------------------------------------------------
-  update time averaged concentrations 
+  update time averaged concentrations
 ------------------------------------------------------------------------- */
 void AppErad::time_averaged_concentration()
 {
-  for(int i = 1; i <= nelement; i++) { // element starts from FE=1  
-     if(dt_new > 0.0) ct[i] = ct_new[i]/dt_new/nlocal; 
+  for(int i = 1; i <= nelement; i++) { // element starts from FE=1
+     if(dt_new > 0.0) ct[i] = ct_new[i]/dt_new/nlocal;
      ct_new[i] = 0.0;
   }
-  dt_new = 0.0;   
+  dt_new = 0.0;
 }
 
 /* ----------------------------------------------------------------------
@@ -1760,23 +1760,23 @@ int AppErad::ibonde(int a, int b, int c)
   return ((a-1)*c + b - a*(a-1)/2);
 }
 
- 
+
 /* ----------------------------------------------------------------------
-  match element. Return 0 if match, 1 otherwise 
-------------------------------------------------------------------------- */ 
+  match element. Return 0 if match, 1 otherwise
+------------------------------------------------------------------------- */
 int AppErad::match(int i)
-{ 
+{
   int j,iele,imatch,jtype;
   iele = element[i];
   imatch = 1;
   for (j=0; j < nctype; j++) imatch *=(iele - ncelem[j]);
   return imatch;
- 
+
 }
 
 /* ----------------------------------------------------------------------
-  perform cluster analysis to obtain precipitation kinetics, currently 
-  works in serial only  
+  perform cluster analysis to obtain precipitation kinetics, currently
+  works in serial only
 ------------------------------------------------------------------------- */
 
 void AppErad::cluster()
@@ -1785,27 +1785,27 @@ void AppErad::cluster()
 
   csize = new int[nlocal];
   cid = new int[nlocal];
-  for (i=0; i<nlocal; i++) cid[i] = -1; 
-  for (i=0; i<nlocal; i++) csize[i] = 0; 
-  
-  // check 1NN atoms 
+  for (i=0; i<nlocal; i++) cid[i] = -1;
+  for (i=0; i<nlocal; i++) csize[i] = 0;
+
+  // check 1NN atoms
   for (i=0; i<nlocal; i++) {
       if(cid[i] >=0) continue; // already assigned to a cluster
-      if(match(i)) continue; // type not match 
+      if(match(i)) continue; // type not match
       cid[i] = i;
       csize[i] ++;
-      
+
       n1nn = numneigh[i]; // 1NN linkage
       for (j=0; j<n1nn; j++) {
           jd = neighbor[i][j];
           if(cid[jd] >= 0) continue; // already assigned to a cluster
-          if(match(jd)) continue; // type not match 
+          if(match(jd)) continue; // type not match
           cid[jd] = i;
           csize[i] ++;
-      } 
-  }    
+      }
+  }
 
-  // iterate to link all clusters until done  
+  // iterate to link all clusters until done
   int ccflag = 1;
   int cmin = 0;
   int n = 0;
@@ -1821,9 +1821,9 @@ void AppErad::cluster()
               jd = neighbor[i][j];
               if(cid[jd] < 0) continue;
               if(cid[jd] < cmin) {
-                ccflag = 1; 
+                ccflag = 1;
                 cmin = cid[jd];
-              } 
+              }
           }
 
           if(ccflag) {
@@ -1836,27 +1836,27 @@ void AppErad::cluster()
                 csize[cid[jd]] --;
                 csize[cmin] ++;
                 cid[jd] = cmin;
-            } 
+            }
           }
       }
-  }          
-       
+  }
+
   // calculate average size and total numbers
   ncluster = 0;
-  rcluster = 0.0; 
+  rcluster = 0.0;
   for (i=0; i<nlocal; i++) {
       iarray[2][i] = -1;
       if(cid[i] < 0) continue;
       if(csize[cid[i]] < ncsize) continue;
       iarray[2][i] = cid[i];
       if(cid[i] != i) continue;
-      rcluster +=csize[i]; // total atoms in all clusters 
-      ncluster ++; // each cluster is represented by its member with smallest atom id 
+      rcluster +=csize[i]; // total atoms in all clusters
+      ncluster ++; // each cluster is represented by its member with smallest atom id
   }
 
   if(ncluster > 0) rcluster /= ncluster;
-  delete [] cid;  
-  delete [] csize;  
+  delete [] cid;
+  delete [] csize;
 }
 
 /* ----------------------------------------------------------------------

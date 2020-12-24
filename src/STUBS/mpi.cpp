@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -175,7 +175,7 @@ int MPI_Waitall(int n, MPI_Request *request, MPI_Status *status)
 
 /* ---------------------------------------------------------------------- */
 
-int MPI_Waitany(int count, MPI_Request *request, int *index, 
+int MPI_Waitany(int count, MPI_Request *request, int *index,
                 MPI_Status *status)
 {
   printf("MPI Stub WARNING: Should not wait on message from self\n");

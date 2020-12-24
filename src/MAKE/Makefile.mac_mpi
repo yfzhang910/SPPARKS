@@ -12,7 +12,7 @@ SHFLAGS =	-fPIC
 DEPFLAGS =	-M
 
 LINK =		mpic++
-LINKFLAGS =	-g -O 
+LINKFLAGS =	-g -O
 LIB =	  	
 SIZE =		size
 
@@ -34,7 +34,7 @@ SPK_INC =	-DSPPARKS_GZIP
 # LIB = name of MPI library
 
 MPI_INC =       -DOMPI_SKIP_MPICXX
-MPI_PATH = 
+MPI_PATH =
 MPI_LIB =	
 
 # JPEG library, only needed if -DLAMMPS_JPEG listed with LMP_INC
@@ -42,7 +42,7 @@ MPI_LIB =
 # PATH = path for JPEG library
 # LIB = name of JPEG library
 
-JPG_INC =       
+JPG_INC =
 JPG_PATH = 	
 JPG_LIB =	/usr/local/lib/libjpeg.a
 

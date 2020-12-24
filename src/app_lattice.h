@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -75,14 +75,14 @@ class AppLattice : public App {
   virtual void check_reaction() {} //yongfeng
   virtual void check_ballistic(double) {} //yongfeng
   virtual void check_frenkelpair(double) {} //yongfeng
-  virtual void check_sinkmotion(double) {} //Yongfeng 
+  virtual void check_sinkmotion(double) {} //Yongfeng
   virtual double real_time(double) { return 0.0; } //yongfeng
   virtual void time_tracer(double) {} //yongfeng
   virtual void concentration_field(double) {} //yongfeng
-  virtual void time_averaged_concentration() {}; // calculate time-averaged concentration 
+  virtual void time_averaged_concentration() {}; // calculate time-averaged concentration
   virtual void cluster() {} //yongfeng
-  virtual void sia_concentration(double) {} //Yongfeng 
-  virtual void onsager(double) {} //Yongfeng 
+  virtual void sia_concentration(double) {} //Yongfeng
+  virtual void onsager(double) {} //Yongfeng
 
  protected:
   int me,nprocs;
@@ -94,22 +94,22 @@ class AppLattice : public App {
   double dt_rkmc;             // rKMC time for one pass thru all sectors
   double dt_kmc;              // KMC time for one pass thru all sectors
   double dt_step;             // KMC time for single global KMC step
-  double min_bfreq;           // minimum mixing frequency 
-  double min_fpfreq;          // minimum frenkel pair production frequency 
+  double min_bfreq;           // minimum mixing frequency
+  double min_fpfreq;          // minimum frenkel pair production frequency
 
   int allow_kmc;               // 1 if app supports KMC
   int allow_rejection;         // 1 if app supports rejection KMC
   int allow_masking;           // 1 if app supports rKMC masking
   int allow_app_update;        // 1 if app provides app_update()
   int numrandom;               // # of RN used by rejection routine
-  int reaction_flag;           // 1 if app supports reactions  
-  int ballistic_flag;          // 1 if app supports ballistic mixing  
-  int frenkelpair_flag;        // 1 if app supports frenkel pair production  
-  int sinkmotion_flag;         // 1 if app supports move of defect sinks  
-  int time_flag;               // flag for time tracer by monomers 
-  int acceleration_flag;       // flag for accelerated KMC 
-  int concentrationflag;       // flag for concentration field calculation  
-  int clst_flag;               // flag for cluster analysis   
+  int reaction_flag;           // 1 if app supports reactions
+  int ballistic_flag;          // 1 if app supports ballistic mixing
+  int frenkelpair_flag;        // 1 if app supports frenkel pair production
+  int sinkmotion_flag;         // 1 if app supports move of defect sinks
+  int time_flag;               // flag for time tracer by monomers
+  int acceleration_flag;       // flag for accelerated KMC
+  int concentrationflag;       // flag for concentration field calculation
+  int clst_flag;               // flag for cluster analysis
   int diffusionflag;           // 1 if calculate the onsager coefficient
 
   int sweepflag;               // set if rejection KMC solver

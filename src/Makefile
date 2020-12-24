@@ -108,7 +108,7 @@ install-python:
 
 TESTMACHINE = serial
 
-test: 
+test:
 	@make $(TESTMACHINE)
 	@cp MAKE/Makefile.$(TESTMACHINE) ../test/Makefile
 	@cd ../test; rm -f test.out; \

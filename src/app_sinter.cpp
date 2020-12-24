@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -43,13 +43,13 @@ using namespace SPPARKS_NS;
 // Taken from Class Lattice file lattice.cpp
 enum{NONE,LINE_2N,SQ_4N,SQ_8N,TRI,SC_6N,SC_26N,FCC,BCC,DIAMOND,
        FCC_OCTA_TETRA,RANDOM_1D,RANDOM_2D,RANDOM_3D};
-// Taken from Class AppLattice file app_lattice.cpp	   
-enum{NOSWEEP,RANDOM,RASTER,COLOR,COLOR_STRICT};	   
+// Taken from Class AppLattice file app_lattice.cpp	
+enum{NOSWEEP,RANDOM,RASTER,COLOR,COLOR_STRICT};	
 
 
 /* ---------------------------------------------------------------------- */
 
-AppSinter::AppSinter(SPPARKS *spk, int narg, char **arg) : 
+AppSinter::AppSinter(SPPARKS *spk, int narg, char **arg) :
   AppLattice(spk,narg,arg)
 {
   ninteger = 1;
@@ -66,15 +66,15 @@ AppSinter::AppSinter(SPPARKS *spk, int narg, char **arg) :
   double gg_events=1.0, pm_events=1.0, a_events=1.0;
   double total_events = gg_events + pm_events + a_events;	  	
 
-  gg_frequency = gg_events / total_events;  
+  gg_frequency = gg_events / total_events;
   pm_frequency = pm_events / total_events;
   a_frequency = a_events / total_events;
   gb_factor = 1.0;
-  gb_ini = -1.0; // Force to calculate it when starting sintering 
+  gb_ini = -1.0; // Force to calculate it when starting sintering
   dt_sweep = 1.0 / gg_frequency;
 
   vac_made = 0;
-  
+
   frame_depth = 1;
   border_depth = 2;
 
@@ -85,7 +85,7 @@ AppSinter::AppSinter(SPPARKS *spk, int narg, char **arg) :
   t_pm_inverse = 1.0 / pore_migration_temperature;
   t_anni_inverse = 1.0 / annihilation_temperature;
   time_sinter_start = 50;
-  
+
   size_annihilist = 0;
   size_collapsinglist = 0;
 }
@@ -96,7 +96,7 @@ AppSinter::~AppSinter()
 {
 
   unique.clear();
-  
+
   adjacent_spins.clear();
   grain_start.clear();
   if ( nprocs > 1 ) {
@@ -127,16 +127,16 @@ void AppSinter::input_app(char *command, int narg, char **arg)
 	 double gg_events = atof( arg[0] );  // If not in inputfile, then default values provided before.
 	 double pm_events = atof( arg[1] );	
 	 double a_events = atof( arg[2] );
-	 
+	
 	 if ( gg_events < 0 ) error->all(FLERR,"Illegal event_ratios command (number of gg events cannot be negative)");
 	 if ( pm_events < 0 ) error->all(FLERR,"Illegal event_ratios command (number of pm events cannot be negative)");
  	 if ( a_events < 0 ) error->all(FLERR,"Illegal event_ratios command (number of annihilation events cannot be negative)");
-		 	 
+		 	
 	 double total_events = gg_events + pm_events + a_events;	  	
-	 gg_frequency = gg_events / total_events;  
+	 gg_frequency = gg_events / total_events;
 	 pm_frequency = pm_events / total_events;
 	 a_frequency = a_events / total_events;
-	 gb_factor = 1.0;	 
+	 gb_factor = 1.0;	
 	 dt_sweep = 1.0 / gg_frequency;
   }
   else if (strcmp(command,"events_temperatures") == 0) {
@@ -148,17 +148,17 @@ void AppSinter::input_app(char *command, int narg, char **arg)
 	 if ( temperature < 0 ) error->all(FLERR,"Illegal events_temperatures command (temperature for gg cannot be negative)");
 	 if ( pore_migration_temperature < 0 ) error->all(FLERR,"Illegal events_temperatures command (temperature for pm cannot be negative)");
 	 if ( annihilation_temperature < 0 ) error->all(FLERR,"Illegal events_temperatures command (temperature for annihilation cannot be negative)");
-	 
+	
 	 t_inverse = 1.0 / temperature;
     t_pm_inverse = 1.0 / pore_migration_temperature;
     t_anni_inverse = 1.0 / annihilation_temperature;
   }
    else if (strcmp(command,"time_sinter_start") == 0) {
     if (narg != 1) error->all(FLERR,"Illegal time_sinter_start command (provide one positive number)");
-	 time_sinter_start = atof( arg[0] );	 
+	 time_sinter_start = atof( arg[0] );	
 	 if ( time_sinter_start < 0 ) error->all(FLERR,"Illegal time_sinter_start command (cannot be negative)");
   } else error->all(FLERR,"Unrecognized command");
-  
+
 }
 
 /* ---------------------------------------------------------------------- */
@@ -178,7 +178,7 @@ void AppSinter::init_app()
 			check.resize( nlocal+nghost );
 			
       	// MAX is a macro defined in 'pointers.h'
-			int max_side = MAX(nx, MAX(ny, nz) );   
+			int max_side = MAX(nx, MAX(ny, nz) );
 			const int SIZE_S ( max_side * 100 );
 
 			annihilation_list.resize( SIZE_S );
@@ -208,7 +208,7 @@ void AppSinter::setup_app()  // making sure that some i may be listed for annihi
 
   	dimension = domain->dimension;
 	nbasis = domain->lattice->nbasis;
-  
+
    // num sites along each axis in lattice
    int nx = domain->nx;
    int ny = domain->ny;
@@ -221,11 +221,11 @@ void AppSinter::setup_app()  // making sure that some i may be listed for annihi
 	assert(Dx > 0);  // for error checking
 	if ( dimension > 1 )	assert(Dy > 0);
 	if ( dimension > 2 )	assert(Dz > 0);
- 
+
 	nx_procs = domain->procgrid[0];
 	ny_procs = domain->procgrid[1];
 	nz_procs = domain->procgrid[2];
- 
+
   	xgrid_proc = (double) nx / nx_procs; // Cristina, what is nx, ny, nz and where it is defined? nx = size of sim in X-dir.
 	ygrid_proc = (double) ny / ny_procs; // xgrid_proc is the size in X at each processor.
 	zgrid_proc = (double) nz / nz_procs; // nx_procs defined in create_lattice (), but not xgrid_proc.
@@ -240,7 +240,7 @@ void AppSinter::setup_app()  // making sure that some i may be listed for annihi
 //printf("check list has been initialized to false\n");
 	}	
 	
-	gb_ini = -1.0; // Force to calculate it when starting sintering 
+	gb_ini = -1.0; // Force to calculate it when starting sintering
 	initialize_parameters_density_calculation();
 //	check_space_initialization();
 	overimpose_frame();
@@ -257,7 +257,7 @@ void AppSinter::initialize_parameters_density_calculation()
 	int nx_density = (int)floor( nx * rcube_fraction );
 	int ny_density = (int)floor( ny * rcube_fraction );
 	int nz_density = (int)floor( nz * rcube_fraction );
-  
+
 	// Open interval: x > xstart_density and x < xend_density ...
 	xstart_density = (nx - nx_density) / 2;
 	xend_density = xstart_density + nx_density;
@@ -274,13 +274,13 @@ void AppSinter::initialize_parameters_density_calculation()
   int xsize = nx / 3;
   int ysize = ny / 3;
   int zsize = nz / 3;
-  
+
   xstart_density = nx*0.33;
   xend_density = xstart_density + xsize;
   ystart_density = ny*0.33;
   yend_density = ystart_density + ysize;
   zstart_density = nz*0.33;
-  zend_density = zstart_density + zsize; 
+  zend_density = zstart_density + zsize;
 
 }
 
@@ -308,7 +308,7 @@ void AppSinter::overimpose_frame()
 			else if ( (i < total_border_depth) || (abs(i-nx+1) < total_border_depth) ) {
 				spin[ind] = VACANT;
 			}	
-		} 
+		}
 		else if (latstyle == SQ_4N || latstyle == SQ_8N || latstyle == TRI) {
 			if ( (i < frame_depth) || (abs(i-nx+1) < frame_depth) ||
 				(j < frame_depth) || (abs(j-ny+1) < frame_depth) ) {
@@ -319,7 +319,7 @@ void AppSinter::overimpose_frame()
 				spin[ind] = VACANT;
 			}
 		}	
-		else if (latstyle == SC_6N || latstyle == SC_26N || 
+		else if (latstyle == SC_6N || latstyle == SC_26N ||
 				latstyle == FCC || latstyle == BCC || latstyle == DIAMOND) {
 			if ( (i < frame_depth) || (abs(i-nx+1) < frame_depth) ||
 				(j < frame_depth) || (abs(j-ny+1) < frame_depth) ||
@@ -336,7 +336,7 @@ void AppSinter::overimpose_frame()
 }
 
 /* ----------------------------------------------------------------------
-	Check space for frame, border and actual simulation 
+	Check space for frame, border and actual simulation
 	All the unit cell is considered as part of the frame / border, thus
 	for lattice structures with more than one base node all the nodes in
 	the same unit cell are initialized equally at the frame / border and
@@ -383,7 +383,7 @@ void AppSinter::check_space_initialization()
 					break;
 				}	
 			}	
-		} 
+		}
 		else if (latstyle == SQ_4N || latstyle == SQ_8N || latstyle == TRI) {
 			if ( (i < frame_depth) || (abs(i-nx+1) < frame_depth) ||
 				(j < frame_depth) || (abs(j-ny+1) < frame_depth) ) {
@@ -406,7 +406,7 @@ void AppSinter::check_space_initialization()
 				}	
 			}	
 		}	
-		else if (latstyle == SC_6N || latstyle == SC_26N || 
+		else if (latstyle == SC_6N || latstyle == SC_26N ||
 				latstyle == FCC || latstyle == BCC || latstyle == DIAMOND) {
 			if ( (i < frame_depth) || (abs(i-nx+1) < frame_depth) ||
 				(j < frame_depth) || (abs(j-ny+1) < frame_depth) ||
@@ -487,7 +487,7 @@ void AppSinter::site_event_rejection(int i, RandomPark *random)
 	
 	if ( nprocs > 1 && check[i] ) return; // Vacancy being annihilated
 	
-	if(oldstate == VACANT) { // ****ASK, is i the vacancy/pore site always? **** 
+	if(oldstate == VACANT) { // ****ASK, is i the vacancy/pore site always? ****
 		
 		if ( (time > time_sinter_start) && (random->uniform() < a_frequency*gb_factor) ) {
 //printf("Proc %d is starting to make vacany in position %d (local) %d (global)\n", me, i, id[i]);			
@@ -506,9 +506,9 @@ void AppSinter::site_event_rejection(int i, RandomPark *random)
 				spin[j] = oldstate;
 				int gs = i; // keep track of the new position for grain site
 				
-				// Initialize minimum energy with value of energy for 
+				// Initialize minimum energy with value of energy for
 				// new gran site (after making the exchange)
-				double min_energy = site_energy(gs); 
+				double min_energy = site_energy(gs);
 				int newstate;
 				choose_neighbor_grain_site_minimizing_energy( gs, neighstate, random, min_energy, newstate );
 				spin[gs] = newstate;
@@ -516,11 +516,11 @@ void AppSinter::site_event_rejection(int i, RandomPark *random)
 
 				// accept or reject the event
 				if (efinal <= einitial) {
-				} 
+				}
 				else if (pore_migration_temperature == 0.0) {
 					spin[i] = oldstate;
 					spin[j] = neighstate;
-				} 
+				}
 				else if (random->uniform() > exp((einitial-efinal)*t_pm_inverse)) {
 					spin[i] = oldstate;
 					spin[j] = neighstate;
@@ -530,7 +530,7 @@ void AppSinter::site_event_rejection(int i, RandomPark *random)
 	}
 	else if (random->uniform() < gg_frequency) { // if oldstate > 1 i.e. if it corresponds to a grain site	
 		// Calculate a GG step
-		double einitial = site_energy(i); 
+		double einitial = site_energy(i);
 		
 		int nevent = 0, m;
 		for(int j = 0; j < numneigh[i]; j++) {
@@ -549,9 +549,9 @@ void AppSinter::site_event_rejection(int i, RandomPark *random)
 
       if(efinal <= einitial){
       }
-      else if (temperature == 0.0) 
+      else if (temperature == 0.0)
 			spin[i] = oldstate;
-      else if (random->uniform() > exp((einitial-efinal)*t_inverse)) 
+      else if (random->uniform() > exp((einitial-efinal)*t_inverse))
 			spin[i] = oldstate;
 	}
 	
@@ -559,9 +559,9 @@ void AppSinter::site_event_rejection(int i, RandomPark *random)
 }
 /* ----------------------------------------------------------------------
  driver of rejection kinetic Monte Carlo
- ------------------------------------------------------------------------- */ 
+ ------------------------------------------------------------------------- */
 void AppSinter::iterate_rejection(double stoptime)
-{ 
+{
 /*  app_lattice has functions/methods that app_sinter uses.  However, it need to stop simulation
    *  at the end of each sector, which app_lattice does not.  So, Cristina told app_lattice to expect
    *  this to be added/modified in app_sinter.  And here it is.  Simulations at each processor stops,
@@ -569,7 +569,7 @@ void AppSinter::iterate_rejection(double stoptime)
    *
    *  This function actually performs everything - annihilation, pm, gg
    */
-   
+
 	int i,icolor,nselect,nrange,jset;
 	int *site2i;
 	
@@ -604,7 +604,7 @@ void AppSinter::iterate_rejection(double stoptime)
 				site2i = set[iset].site2i;
 				nrange = set[iset].nlocal;
 				nselect = set[iset].nselect;
-				for (i = 0; i < nselect; i++) 
+				for (i = 0; i < nselect; i++)
 					sitelist[i] = site2i[ranapp->irandom(nrange) - 1];
 				(this->*sweep)(nselect,sitelist);
 				nattempt += nselect;
@@ -647,7 +647,7 @@ void AppSinter::iterate_rejection(double stoptime)
     if (done || time >= nextoutput) nextoutput = output->compute(time,done);
     timer->stamp(TIME_OUTPUT);
 	if ( time > nextgbupdate ) nextgbupdate = calculate_gb_update( time );
-  }   
+  }
 }
 
 
@@ -659,9 +659,9 @@ void AppSinter::iterate_rejection(double stoptime)
 
 /* ----------------------------------------------------------------------
 	Given a set of coordinates this function returns the processor that
-	owns the closest lattice site (always mapped to the base point of the 
+	owns the closest lattice site (always mapped to the base point of the
 	unit cell (0,0,0) ) and the integer coordinates of the site in the
-	lattice 
+	lattice
 ------------------------------------------------------------------------- */
 
 int AppSinter::xyz_to_processor_and_grid( double x, double y, double z, int &grid_x, int &grid_y, int &grid_z )
@@ -697,11 +697,11 @@ int AppSinter::xyz_to_processor_and_grid( double x, double y, double z, int &gri
 	
 	return proc;
 
-} 
+}
 
 /* ----------------------------------------------------------------------
 	Given a set of coordinates this function returns the processor that
-	owns the closest lattice site (always mapped to the base point of the 
+	owns the closest lattice site (always mapped to the base point of the
 	unit cell (0,0,0) ) and the global index of the site
 ------------------------------------------------------------------------- */
 
@@ -745,11 +745,11 @@ int AppSinter::xyz_to_processor_and_global( double x, double y, double z, int &i
 //printf ("In proc: %d I calculated that iglobal: %d is in proc: %d, from owner array it is proc: %d\n", me, iglobal, proc, owner[iglobal]);
 	
 	return proc;
-} 
+}
 
 /* ----------------------------------------------------------------------
-   Given a set of coordinates this function returns the local index of 
-	the closest lattice site (always mapped to the base point of the 
+   Given a set of coordinates this function returns the local index of
+	the closest lattice site (always mapped to the base point of the
 	unit cell (0,0,0) )
 	It fails if the point is not inside the local box
 ------------------------------------------------------------------------- */
@@ -799,8 +799,8 @@ int AppSinter::xyz_to_local( double x, double y, double z )
 }
 
 /* ----------------------------------------------------------------------
-	Given the global index of the site this function returns the integer 
-	coordinates of the site in the lattice 
+	Given the global index of the site this function returns the integer
+	coordinates of the site in the lattice
 ------------------------------------------------------------------------- */
 
 void AppSinter::global_to_grid( int iglobal, int & i, int & j, int & k )
@@ -816,13 +816,13 @@ void AppSinter::global_to_grid( int iglobal, int & i, int & j, int & k )
 
 	if (latstyle == LINE_2N) {
 		i = (iglobal-1)/nbasis % nx;
-		j = 0; 
+		j = 0;
 		k = 0;
 	} else if (latstyle == SQ_4N || latstyle == SQ_8N || latstyle == TRI) {
 		i = (iglobal-1)/nbasis % nx;
 		j = (iglobal-1)/nbasis / nx;
 		k = 0;
-	}	else if (latstyle == SC_6N || latstyle == SC_26N || 
+	}	else if (latstyle == SC_6N || latstyle == SC_26N ||
 	     latstyle == FCC || latstyle == BCC || latstyle == DIAMOND) {
 		i = (iglobal-1)/nbasis % nx;
 		j = (iglobal-1)/nbasis / nx % ny;
@@ -843,7 +843,7 @@ void AppSinter::choose_neighbor_grain_site_minimizing_energy( int i, int neighst
 	// Choose a random offset (every grain should have equal probability)
 	int initnn = (int) (numneigh[i]*random->uniform());
 	if (initnn >= numneigh[i]) initnn = numneigh[i] - 1;
-	   
+	
 	// Go through all neighbors
 	int nevent = 0, m;
 	newstate = neighstate;
@@ -901,11 +901,11 @@ void AppSinter::make_vacancy(int i, RandomPark *random)
 			// accept or reject the event
 
 			if (efinal <= einitial) {
-			} 
+			}
 			else if (annihilation_temperature == 0.0) {
 				spin[i] = oldstate;
 				spin[j] = neighstate;
-			} 
+			}
 			else if (random->uniform() > exp((einitial-efinal)*t_anni_inverse)) {
 				spin[i] = oldstate;
 				spin[j] = neighstate;
@@ -959,14 +959,14 @@ void AppSinter::annihilate(int i, RandomPark *random)
 /* ----------------------------------------------------------------------
     In parallel execution annihilation cannot be completed until the
 	end of the sweep, when all processors are waiting to communicate
-	with each other. Thus, the index of the site with the vacancy that 
+	with each other. Thus, the index of the site with the vacancy that
 	is being annihilated is registered (i).
 	Array check is used to pin the site i so no further changes can be
 	done until the annihilation is processed. Index i can correspond to
-	a local (owned) or a ghost site. 
+	a local (owned) or a ghost site.
 ------------------------------------------------------------------------- */
 
-void AppSinter::register_annihilation_event(int i) 
+void AppSinter::register_annihilation_event(int i)
 {
 	assert( spin[i] == VACANT ); // if false, then run is terminated with an error statement.
 	assert( !check[i] );
@@ -977,7 +977,7 @@ void AppSinter::register_annihilation_event(int i)
 }
 
 /* ----------------------------------------------------------------------
-   In Parallel execution, consolidate the list of annihilations made by 
+   In Parallel execution, consolidate the list of annihilations made by
 	each processor, calculate the center of mass for each adjacent grain,
 	compute the new vacancy position and generate a list of collapsing
 	paths. The collapsing list is calculated by the processor that owns
@@ -987,7 +987,7 @@ void AppSinter::register_annihilation_event(int i)
 	be annihilated, then this annihilation is removed from the list and
 	no collapsing is computed.
 ------------------------------------------------------------------------- */
- 
+
 void AppSinter::update_annihilations(RandomPark *random)
 {
 	if ( time > time_sinter_start ) {
@@ -1006,14 +1006,14 @@ void AppSinter::update_annihilations(RandomPark *random)
 				const int GROUP(dimension+1);
 				vector<double> cm_buffer_out ( size_annihilist_all*GROUP );			
 				
-				calculate_mass_center_distributed_grains( size_annihilist_all, GROUP, cm_buffer_out ); //com associated with each vacancy is calculated. 
+				calculate_mass_center_distributed_grains( size_annihilist_all, GROUP, cm_buffer_out ); //com associated with each vacancy is calculated.
 				generate_local_vacancy_collapsing_list( size_annihilist_all, GROUP, cm_buffer_out );
 */				
 				generate_local_vacancy_collapsing_list( size_annihilist_all );
 				filter_local_vacancy_collapsing_list(); // making sure that overlapping vacancies are filtered.
 				
 				int size_collapsinglist_all = 0;
-				MPI_Allreduce(&size_collapsinglist,&size_collapsinglist_all,1,MPI_INT,MPI_SUM,world); // all processors know the total number of pending annihilations 
+				MPI_Allreduce(&size_collapsinglist,&size_collapsinglist_all,1,MPI_INT,MPI_SUM,world); // all processors know the total number of pending annihilations
 				if ( size_collapsinglist_all ) {
 					collapse_pending_list ( size_collapsinglist_all );
 				}	
@@ -1027,7 +1027,7 @@ void AppSinter::update_annihilations(RandomPark *random)
 		catch (std::bad_alloc& ba) {
 			error->all(FLERR,"bad_alloc caught inside update_annihiliations");
 		}
-	}			 
+	}			
 }
 
 /////////////////////////////////////////// PROCESSING ANNIHILATIONS - SERIAL //////////////////////////////////////////////////
@@ -1040,8 +1040,8 @@ void AppSinter::update_annihilations(RandomPark *random)
 	is not a vacancy because it is surrounded by other vacant neighbors
 	then function returns false.
 	The search for the adjacent grain starts from a random neighbor
-	to avoid the bias in case of a tie. 
-	The adjacent grain its specified through its spin and a position 
+	to avoid the bias in case of a tie.
+	The adjacent grain its specified through its spin and a position
 	occupied by it.	
 ------------------------------------------------------------------------- */
 
@@ -1101,9 +1101,9 @@ bool AppSinter::vacancy_adjacent_grain( int i, RandomPark *random, int & adjacen
 double AppSinter::calculate_mass_center_adjacent_grain(int i, int isite, vector<double> & cm )
 {
 	
-	vector<bool> registered ( nlocal, false ); 
+	vector<bool> registered ( nlocal, false );
 	
-	for ( int j = 0; j < dimension; j++ ) 
+	for ( int j = 0; j < dimension; j++ )
 		cm[j] = 0.0;
 		
 	assert( isite != FRAME && isite != VACANT );	
@@ -1121,7 +1121,7 @@ double AppSinter::calculate_mass_center_adjacent_grain(int i, int isite, vector<
 //		assert ( k >= 0 && k < nlocal );
 		grainstack.pop();
 		vol++;
-		for ( int j = 0; j < dimension; j++ ) 
+		for ( int j = 0; j < dimension; j++ )
 			cm[j] += xyz[k][j];
 		for (int j = 0; j < numneigh[k]; j++) {
 			ii = neighbor[k][j];
@@ -1132,7 +1132,7 @@ double AppSinter::calculate_mass_center_adjacent_grain(int i, int isite, vector<
 		}		
 	}
 	
-	for ( int j = 0; j < dimension; j++ ) 
+	for ( int j = 0; j < dimension; j++ )
 		cm[j] /= vol;	
 		
 	return vol;	
@@ -1146,8 +1146,8 @@ double AppSinter::calculate_mass_center_adjacent_grain(int i, int isite, vector<
 	to the center of mass of the adjacent grain to border of simulation
 	space
 	At the end: p is the direction vector, new_pos is vacancy new position
-	and mint is the number of discrete steps to be taken from the old 
-	to the new position 
+	and mint is the number of discrete steps to be taken from the old
+	to the new position
 ------------------------------------------------------------------------- */
 
 void AppSinter::calculate_vacancy_new_position( int i, vector<double> & cm, vector<double> & p, double &mint, vector<double> & new_pos )
@@ -1189,21 +1189,21 @@ void AppSinter::calculate_vacancy_new_position( int i, vector<double> & cm, vect
 		error->one(FLERR,"Vacancy to be annihilated and center of mass too close. Increment time to start sintering");
 	}	
 	
-	for ( int dim = 0; dim < dimension; dim++ ) 
+	for ( int dim = 0; dim < dimension; dim++ )
 		new_pos[dim] = old_pos[dim] + mint * p[dim];		
 }
 
 /* ----------------------------------------------------------------------
 	For execution in ONE processor
-	Move the vacancy to the new position shifting the intermediate 
+	Move the vacancy to the new position shifting the intermediate
 	positions back from the vacancy new position to the old one.
 	Given:	- Index of the current position of the vacancy (ind_vac)
 				- Direction vector between old and new position (p)
 				- Maximum multiplier for vector p to reach new position (limit_t)
-				- Vacancy new position (new_pos) 
+				- Vacancy new position (new_pos)
 	Starting from the vacancy position calculate the number of discrete
 	steps to reach the new position.
-	Use direction vector p multiplied by the size of discrete step to 
+	Use direction vector p multiplied by the size of discrete step to
 	determine the next position in the direction of collapsing. Move
 	the lattice state of that site to the previous site in the path.
 	Stop when the border is found. Set the site before the border to
@@ -1287,7 +1287,7 @@ void AppSinter::generate_annihilation_spin_list(RandomPark *random)
 	vector<int> copy_annihilation_list( size_annihilist );
 	for ( int i = 0; i < size_annihilist; i++ ) {
 		copy_annihilation_list[i] = annihilation_list[i];
-	} 
+	}
 	
 	int old_size_annihilist = size_annihilist;
 	size_annihilist = 0;
@@ -1313,18 +1313,18 @@ void AppSinter::generate_annihilation_spin_list(RandomPark *random)
 	Given:	- Index of the current position of the vacancy (ind_vac)
 				- Direction vector between old and new position (p)
 				- Maximum multiplier for vector p to reach new position (limit_t)
-				- Vacancy new position (new_pos) 
+				- Vacancy new position (new_pos)
 	
 	If vacancy new position and old position are owner by the same
-	processor: move vacancy to the new position shifting the intermediate 
-	positions back from the vacancy new position to the old one. If 
+	processor: move vacancy to the new position shifting the intermediate
+	positions back from the vacancy new position to the old one. If
 	they are in different processors register in the collapsing list:
 	initial position of vacancy, vector p, maximum multiplier, number
 	of discrete steps, and owner of vacancy.
 ------------------------------------------------------------------------- */
 
 void AppSinter::register_collapsing_event(int ind_vac, vector<double> & p, double limit_t, vector<double> & new_pos)
-// Vacancy to be annihilated is in the processor entering this function 
+// Vacancy to be annihilated is in the processor entering this function
 {
 	assert( spin[ind_vac] == VACANT );
 
@@ -1351,7 +1351,7 @@ void AppSinter::register_collapsing_event(int ind_vac, vector<double> & p, doubl
 		int ind_end = xyz_to_local(new_pos[0], new_pos[1], new_pos[2]);
 		
 //		if ( spin[ind_end] != FRAME ) {
-//			printf("proc: %d ind_end: %d (global: %d) vac_new_pos: (%lf, %lf, %lf) grid: (%d, %d, %d) xyz[ind_end] (%lf, %lf, %lf) actual_state: %d\n", me, ind_end, id[ind_end], new_pos[0], new_pos[1], new_pos[2], gridx_end, gridy_end, gridz_end, xyz[ind_end][0], xyz[ind_end][1], xyz[ind_end][2], spin[ind_end]); 
+//			printf("proc: %d ind_end: %d (global: %d) vac_new_pos: (%lf, %lf, %lf) grid: (%d, %d, %d) xyz[ind_end] (%lf, %lf, %lf) actual_state: %d\n", me, ind_end, id[ind_end], new_pos[0], new_pos[1], new_pos[2], gridx_end, gridy_end, gridz_end, xyz[ind_end][0], xyz[ind_end][1], xyz[ind_end][2], spin[ind_end]);
 //		}
 		assert( spin[ind_end] == FRAME );	
 	
@@ -1435,8 +1435,8 @@ void AppSinter::register_collapsing_event(int ind_vac, vector<double> & p, doubl
 }
 
 /* ----------------------------------------------------------------------
-   In Parallel execution, consolidate the list of spins for the 
-	annihilations to be made by each processor. Use the spin to calculate 
+   In Parallel execution, consolidate the list of spins for the
+	annihilations to be made by each processor. Use the spin to calculate
 	the center of mass for each adjacent grain (grain with that spin).
 	The average for the center of mass is not calculated, instead the
 	sum of xyz positions and the number of sites per grain is consolidated
@@ -1444,7 +1444,7 @@ void AppSinter::register_collapsing_event(int ind_vac, vector<double> & p, doubl
 ------------------------------------------------------------------------- */
 /*
 void AppSinter::calculate_mass_center_distributed_grains( const int SIZE_LIST, const int SIZE_GROUP, vector<double> & cm_grains )
-{ 
+{
 	const int SIZE_BUFFER ( SIZE_LIST*SIZE_GROUP );
 	
 	vector<int> annihilation_buffer( SIZE_LIST );
@@ -1479,12 +1479,12 @@ void AppSinter::calculate_mass_center_distributed_grains( const int SIZE_LIST, c
 */
 /* ----------------------------------------------------------------------
    In Parallel execution, after the center of mass of the adjcent grains
-	for all annihilation events is calculated, each processor compute the 
-	vacancy new position and generate a list of collapsing paths. 
+	for all annihilation events is calculated, each processor compute the
+	vacancy new position and generate a list of collapsing paths.
 	The collapsing list is calculated by the processor that owns
 	the vacancy to be annihilated, thus it is a local list.
-	If collapsing some path moves one of the vacancies registered to be 
-	annihilated, then this annihilation is removed from the list and no 
+	If collapsing some path moves one of the vacancies registered to be
+	annihilated, then this annihilation is removed from the list and no
 	collapsing is computed.
 	The list of local pending collapsing paths is stored in vector:
 	collapsing_directions
@@ -1552,7 +1552,7 @@ void AppSinter::generate_local_vacancy_collapsing_list( const int SIZE_LIST )
 		 for ( int count = 0; count < numneigh[j]; count++ ) {
 		 printf("%d ", lattice[neighbor[j][count]] );
 		 }
-		 printf("\nnumber of grains: %d. List of spins:\n", numgrains );  
+		 printf("\nnumber of grains: %d. List of spins:\n", numgrains );
 		 //			for ( int count = 0; count < numgrains; count++ ) {
 		 //				printf("%d ", grain_spins[count]);
 		 //			}
@@ -1605,7 +1605,7 @@ void AppSinter::filter_local_vacancy_collapsing_list()
 		}	
 		else {
 			ilocalt = xyz_to_local(xt, yt, zt);
-			if ( spin[ilocalt] == VACANT ) 
+			if ( spin[ilocalt] == VACANT )
 				copyflag = true;
 		}
 		if ( copyflag ) {		
@@ -1624,28 +1624,28 @@ void AppSinter::filter_local_vacancy_collapsing_list()
 
 /* ----------------------------------------------------------------------
    In Parallel execution, consolidate the list of pending annihilations,
-	follow the different paths updating the sites and exchange boundary 
+	follow the different paths updating the sites and exchange boundary
 	information.
-	All the processors folllow the paths but just the one who ownes the 
-	sites makes the corresponding updates. When a border between processors 
+	All the processors folllow the paths but just the one who ownes the
+	sites makes the corresponding updates. When a border between processors
 	is found, the previous processor keeps waiting for the new state comming
 	from the next processor. The information exchanged is global index and
 	spin update.
 	If the boder (frame) of the simulation space is found before completing
-	the supposed number of steps and the expected final site is in a 
+	the supposed number of steps and the expected final site is in a
 	different processor, then the processor waits for some information (to
 	avoid blocking) but does not use it, as it is just frame sites.
 	The border states are collected in a stack that is updated at the
 	end of each path.
-	If a global index corresponding to a vacancy to be annihilated has been 
+	If a global index corresponding to a vacancy to be annihilated has been
 	updated (as indicated by a list of iglobal indices updated every time
 	a new site is sweeped), then the corresponding collapsing route is not
 	comlpeted.
 	To avoid destroying the border, before updating any site it is veryfied
-	that it does not correspond to the border. 
+	that it does not correspond to the border.
 ------------------------------------------------------------------------- */
 
-void AppSinter::collapse_pending_list ( const int SIZE_LIST ) 
+void AppSinter::collapse_pending_list ( const int SIZE_LIST )
 {
 	vector<double> collapsing_directions_buffer ( SIZE_LIST );
 			
@@ -1710,7 +1710,7 @@ void AppSinter::collapse_pending_list ( const int SIZE_LIST )
 			current_index = loc->second;
 			assert( spin[current_index] == VACANT );
 //			if ( spin[current_index] > VACANT ) {
-//				printf("proc: %d collapse start in iglobal: %d ilocal: %d state: %d\n", me, iglobal, current_index, spin[current_index]); 
+//				printf("proc: %d collapse start in iglobal: %d ilocal: %d state: %d\n", me, iglobal, current_index, spin[current_index]);
 //			}							
 		}
 		else
@@ -1819,7 +1819,7 @@ double AppSinter::calculate_gb_update(double current_time)
 	else {
 		double gb_update = calculate_gb_average(grain_size_avg);
 		gb_factor = (gb_ini * gb_ini) / (gb_update * gb_update);
-		prev_density = density; 
+		prev_density = density;
 //		if ( me == 0 ) {
 //			printf("gb_factor: %lf\n", gb_factor);
 //			printf("grain size average: %lf\n",grain_size_avg);
@@ -1989,7 +1989,7 @@ double AppSinter::calculate_gb_average(double & grain_size_average)
 				aux_neighproc = copy_buffer[k];
 				k += (aux_neighproc + 1);
 			}
-			// Count number of faces by removing duplicates from list of faces and burning face already included 
+			// Count number of faces by removing duplicates from list of faces and burning face already included
 			int count_faces = 0;
 			for ( int i = 0; i < faces.size(); i++ ) {
 				if ( faces[i] != -1 ) {
@@ -2005,7 +2005,7 @@ double AppSinter::calculate_gb_average(double & grain_size_average)
 			}
 			total_faces += count_faces;
 			total_grains++;
-			copy_buffer[ind_current_spin] = -1; // burning current spin 
+			copy_buffer[ind_current_spin] = -1; // burning current spin
 		}	
 		gb_avg = (double) total_face_sites / (double) total_faces;
 		grain_size_average = (double) total_grain_sites / (double) total_grains;
@@ -2019,7 +2019,7 @@ double AppSinter::calculate_gb_average(double & grain_size_average)
 		avg[0] = gb_avg;
 		avg[1] = grain_size_average;
 	}
-	 
+	
 	MPI_Bcast(&avg[0], 2, MPI_DOUBLE, 0, world);
 
 	if ( me > 0 ) {
@@ -2181,7 +2181,7 @@ double AppSinter::calculate_gb_average(double & grain_size_average)
 				aux_neighproc = copy_buffer[k];
 				k += (aux_neighproc + 1);
 			}
-			// Count number of faces by removing duplicates from list of faces and burning face already included 
+			// Count number of faces by removing duplicates from list of faces and burning face already included
 			int count_faces = 0;
 			for ( int i = 0; i < faces.size(); i++ ) {
 				if ( faces[i] != -1 ) {
@@ -2197,7 +2197,7 @@ double AppSinter::calculate_gb_average(double & grain_size_average)
 			}
 			total_faces += count_faces;
 			total_grains++;
-			copy_buffer[ind_current_spin] = -1; // burning current spin 
+			copy_buffer[ind_current_spin] = -1; // burning current spin
 		}	
 		gb_avg = (double) total_face_sites / (double) total_faces;
 		grain_size_average = (double) total_grain_sites / (double) total_grains;
@@ -2250,7 +2250,7 @@ void AppSinter::cluster_faces( int start_ilocal, vector<bool> & site_included, i
 			int neigh = neighbor[ilocal][nbor];
 			int neigh_spin = spin[neigh];
 			if ( neigh_spin == FRAME || neigh_spin == VACANT ) continue; // Outside simulation space or vacancy
-			if ( neigh_spin == lspin ) { // Same spin, part of the cluster 
+			if ( neigh_spin == lspin ) { // Same spin, part of the cluster
 				if ( !site_included[neigh] ) { // if not included --> include in exploring stack
 					exploring.push( neigh );
 					site_included[neigh] = true;
@@ -2273,7 +2273,7 @@ void AppSinter::cluster_faces( int start_ilocal, vector<bool> & site_included, i
 				aux_faces.push_back( unique[i] );
 		}	
 	}
-	// Removing duplicates from list of faces by burning face already included 
+	// Removing duplicates from list of faces by burning face already included
 	for ( int i = 0; i < aux_faces.size(); i++ ) {
 		if ( aux_faces[i] != -1 ) {
 			int neigh_spin = aux_faces[i];
@@ -2288,7 +2288,7 @@ void AppSinter::cluster_faces( int start_ilocal, vector<bool> & site_included, i
 	}
 
 	if ( multiproc ) { // Grain is contained in more than one processor
-		// Removing duplicates from list of neighboring procs by burning proc already included 
+		// Removing duplicates from list of neighboring procs by burning proc already included
 		for ( int i = 0; i < aux_neigh_procs.size(); i++ ) {
 			if ( aux_neigh_procs[i] != -1 ) {
 				int neighproc = aux_neigh_procs[i];
@@ -2302,7 +2302,7 @@ void AppSinter::cluster_faces( int start_ilocal, vector<bool> & site_included, i
 			}	
 		}
 	}
-} 
+}
 */
 
 /* ----------------------------------------------------------------------
@@ -2340,7 +2340,7 @@ void AppSinter::cluster_faces( int start_ilocal, vector<bool> & site_included, i
 			int neigh = neighbor[ilocal][nbor];
 			int neigh_spin = spin[neigh];
 			if ( neigh_spin == FRAME || neigh_spin == VACANT ) continue; // Outside simulation space or vacancy
-			if ( neigh_spin == ispin ) { // Same spin, part of the cluster 
+			if ( neigh_spin == ispin ) { // Same spin, part of the cluster
 				if ( !site_included[neigh] ) { // if not included --> include in exploring stack
 					exploring.push( neigh );
 					site_included[neigh] = true;
@@ -2367,7 +2367,7 @@ void AppSinter::cluster_faces( int start_ilocal, vector<bool> & site_included, i
 			aux_faces.push_back( unique[i] );
 		}	
 	}
-	// Removing duplicates from list of faces by burning face already included 
+	// Removing duplicates from list of faces by burning face already included
 	for ( int i = 0; i < aux_faces.size(); i++ ) {
 		if ( aux_faces[i] != -1 ) {
 			int neigh_spin = aux_faces[i];
@@ -2382,7 +2382,7 @@ void AppSinter::cluster_faces( int start_ilocal, vector<bool> & site_included, i
 	}
 	
 	if ( multiproc ) { // Grain is contained in more than one processor
-		// Removing duplicates from list of neighboring procs by burning proc already included 
+		// Removing duplicates from list of neighboring procs by burning proc already included
 		for ( int i = 0; i < aux_neigh_procs.size(); i++ ) {
 			if ( aux_neigh_procs[i] != -1 ) {
 				int neighproc = aux_neigh_procs[i];
@@ -2396,21 +2396,21 @@ void AppSinter::cluster_faces( int start_ilocal, vector<bool> & site_included, i
 			}	
 		}
 	}
-} 
+}
 
 /* ----------------------------------------------------------------------
  In Parallel execution, consolidate the list of centers of mass for
  each grain in the domain. The same spin comming from different
- processors is collected as one grain. 
+ processors is collected as one grain.
  At the end every processor knows the center of mass of every grain.
  Spins are stored in vector 'grain_spins', center of mas in vector
  'grain_mass_center' and number of grain in 'numgrains'
  ------------------------------------------------------------------------- */
 
-void AppSinter::consolidate_mass_center_distributed_grains( vector<int> & spins, vector<double> & cm_list, const int LOCALNUMGRAINS ) 
+void AppSinter::consolidate_mass_center_distributed_grains( vector<int> & spins, vector<double> & cm_list, const int LOCALNUMGRAINS )
 {
 	const int GROUPSIZE ( dimension + 1 ); // coordinates plus one element for volume
-	int local_size = LOCALNUMGRAINS; 
+	int local_size = LOCALNUMGRAINS;
 	int fat_numgrains=0;
 	
 	vector<int> cm_distribution( nprocs );
@@ -2419,7 +2419,7 @@ void AppSinter::consolidate_mass_center_distributed_grains( vector<int> & spins,
 	
 	vector<int> cm_displacement;
 	vector<int> gspins;
-	vector<double> gcm; 
+	vector<double> gcm;
 	
 	if ( me == 0 ) {			
 		cm_displacement.resize( nprocs );
@@ -2430,7 +2430,7 @@ void AppSinter::consolidate_mass_center_distributed_grains( vector<int> & spins,
 		}
 		
 		gspins.resize( sum );
-		gcm.resize( sum * GROUPSIZE ); 
+		gcm.resize( sum * GROUPSIZE );
 		fat_numgrains = sum;
 	}
 	
@@ -2483,7 +2483,7 @@ void AppSinter::consolidate_mass_center_distributed_grains( vector<int> & spins,
 	/*	
 	 int i, j,count=0;
 	 for ( i = 0; i < nlocal; i++ ) {
-	 if ( lattice[i] > VACANT ) { 
+	 if ( lattice[i] > VACANT ) {
 	 for ( j = 0; j < numgrains; j++ ) {
 	 if ( lattice[i] == grain_spins[j] )
 	 break;
@@ -2495,7 +2495,7 @@ void AppSinter::consolidate_mass_center_distributed_grains( vector<int> & spins,
 	 }	
 	 }
 	 printf("proc: %d number of grains not found in the list: %d\n", me, count );
-	 printf("proc: %d size of vector grain_spins: %d\n", me, grain_spins.size() ); 
+	 printf("proc: %d size of vector grain_spins: %d\n", me, grain_spins.size() );
 	 */	
 }
 
@@ -2520,10 +2520,10 @@ void AppSinter::stats(char *strtmp)
 {
   double naccept_double = (double)naccept;
   double naccept_double_all;
-  
+
   double vm_all=0;
   double vacm = (double)vac_made;
-  
+
   if ( nprocs > 1 ) {
 	MPI_Allreduce(&naccept_double,&naccept_double_all,1,MPI_DOUBLE,MPI_SUM,world);	
 	MPI_Allreduce(&vacm,&vm_all,1,MPI_DOUBLE,MPI_SUM,world);
@@ -2558,7 +2558,7 @@ void AppSinter::stats(char *strtmp)
 
 double AppSinter::count_vacant()
 {// just checking for errors
-	double vacant_sites = 0; 
+	double vacant_sites = 0;
 	
 	for ( int i = 0; i < nlocal; ++i )
 		if ( spin[i] == VACANT )

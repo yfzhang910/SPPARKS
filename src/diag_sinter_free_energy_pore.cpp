@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -32,7 +32,7 @@ using namespace SPPARKS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-DiagSinterFreeEnergyPore::DiagSinterFreeEnergyPore(SPPARKS *spk, int narg, char **arg) : 
+DiagSinterFreeEnergyPore::DiagSinterFreeEnergyPore(SPPARKS *spk, int narg, char **arg) :
   Diag(spk,narg,arg)
 {
   if (app->appclass != App::LATTICE)
@@ -75,9 +75,9 @@ void DiagSinterFreeEnergyPore::compute()
 		if ((xgrid > xstart_) && (xgrid < xend_) &&
 			(ygrid > ystart_) && (ygrid < yend_) &&
 			(zgrid > zstart_) && (zgrid < zend_) ) {
-		  
+		
 			total_sites++;
-		  
+		
 			int ispin = spin[i];
 			double surface = 0;
 			if ( ispin > VACANT ) { // If I am a grain site add the number of neighbors that are pore sites
@@ -146,12 +146,12 @@ void DiagSinterFreeEnergyPore::initialize_parameters_calculation()
   int xsize = nx / 3;
   int ysize = ny / 3;
   int zsize = nz / 3;
-  
+
   xstart_ = nx*0.33;
   xend_ = xstart_ + xsize;
   ystart_ = ny*0.33;
   yend_ = ystart_ + ysize;
   zstart_ = nz*0.33;
-  zend_ = zstart_ + zsize; 
+  zend_ = zstart_ + zsize;
 }
 

@@ -484,11 +484,11 @@ void AppLattice::iterate_kmc_global(double stoptime)
     isite = solve->event(&dt_step);
     timer->stamp(TIME_SOLVE);
 
-    if(ballistic_flag && dt_step > min_bfreq) dt_step = min_bfreq; //Yongfeng, double check later!!! 
+    if(ballistic_flag && dt_step > min_bfreq) dt_step = min_bfreq; //Yongfeng, double check later!!!
     if(frenkelpair_flag && dt_step > min_fpfreq) dt_step = min_fpfreq; //Yongfeng, double check later!!!
     if (isite >= 0) {
       time += dt_step;
-      if (concentrationflag) concentration_field(dt_step); //yongfeng, integrate concentration every step 
+      if (concentrationflag) concentration_field(dt_step); //yongfeng, integrate concentration every step
       if (time_flag) { //yongfeng
          time_tracer(dt_step);
          realtime += dt_step*real_time(time);
@@ -501,30 +501,30 @@ void AppLattice::iterate_kmc_global(double stoptime)
         if (frenkelpair_flag) check_frenkelpair(time); //yongfeng
         if (sinkmotion_flag) check_sinkmotion(time); //yongfeng
         if (diffusionflag) onsager(time); //yongfeng
-        //if (ballistic_flag) sia_concentration(dt_step); // yongfeng 
+        //if (ballistic_flag) sia_concentration(dt_step); // yongfeng
 	timer->stamp(TIME_APP);
       } else {
 	done = 1;
 	time = stoptime;
       }
-    } else { // can not identify a site to perform site event, i.e., no diffusers 
-      if (ballistic_flag || frenkelpair_flag) { // the time advanement should not exceed the time interval for ballistic events 
+    } else { // can not identify a site to perform site event, i.e., no diffusers
+      if (ballistic_flag || frenkelpair_flag) { // the time advanement should not exceed the time interval for ballistic events
          if (ballistic_flag) {
 	    time += min_bfreq;
-	    check_ballistic(time); 
+	    check_ballistic(time);
 	 }
 	 if (frenkelpair_flag) {
 	    time += min_fpfreq;
 	    check_frenkelpair(time);
-	 } 
+	 }
       } else {
         done = 1;
         time = stoptime;
-      } 
+      }
     }
 
     if (clst_flag && (done || time >= nextoutput)) cluster();
-    if (concentrationflag && (done || time >= nextoutput)) time_averaged_concentration(); // calculate time averaged concentration 
+    if (concentrationflag && (done || time >= nextoutput)) time_averaged_concentration(); // calculate time averaged concentration
     if (done || time >= nextoutput) nextoutput = output->compute(time,done);
     timer->stamp(TIME_OUTPUT);
   }
@@ -606,8 +606,8 @@ void AppLattice::iterate_kmc_sector(double stoptime)
 	isite = solve->event(&dt);
 	timer->stamp(TIME_SOLVE);
 
-        if(ballistic_flag && dt > min_bfreq) dt = min_bfreq;  // the timestep can not exceed ballstic frequency if the flag is on 
-        if(frenkelpair_flag && dt > min_bfreq) dt = min_fpfreq;  // the timestep can not exceed ballstic frequency if the flag is on 
+        if(ballistic_flag && dt > min_bfreq) dt = min_bfreq;  // the timestep can not exceed ballstic frequency if the flag is on
+        if(frenkelpair_flag && dt > min_bfreq) dt = min_fpfreq;  // the timestep can not exceed ballstic frequency if the flag is on
 	if (isite < 0 || site2i[isite] < 0) done = 1;  // site2i[isite]
 	else {
 	  timesector += dt;
@@ -642,7 +642,7 @@ void AppLattice::iterate_kmc_sector(double stoptime)
     if (frenkelpair_flag) check_frenkelpair(time); //yongfeng
     if (sinkmotion_flag) check_sinkmotion(time); //yongfeng
     if (concentrationflag) concentration_field(dt_kmc); //yongfeng
-    //if (ballistic_flag) sia_concentration(dt_kmc); // yongfeng 
+    //if (ballistic_flag) sia_concentration(dt_kmc); // yongfeng
 
     if (time >= stoptime) alldone = 1;
     if (alldone || time >= nextoutput) {

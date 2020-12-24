@@ -10,18 +10,18 @@
 
    See the README file in the top-level SPPARKS directory.
 *************************************************************************************
-   This application does radiation segregation simulations based on Soisson 2006. 
+   This application does radiation segregation simulations based on Soisson 2006.
    Contributer: Yongfeng Zhang, yzhang2446@wisc.edu
 ------------------------------------------------------------------------- */
 
-/* Things to be done 
- * 1. Remove accelerated diffusion 
- * 2. Correct diffusion calculation 
- * 3. Add corrections to energy and barrier for different interstitials 
- * 4. Enable ct_site calculation to show the spacial distribution of concentrations 
+/* Things to be done
+ * 1. Remove accelerated diffusion
+ * 2. Correct diffusion calculation
+ * 3. Add corrections to energy and barrier for different interstitials
+ * 4. Enable ct_site calculation to show the spacial distribution of concentrations
  * 5. Add full references to models
- * 6. Update reaction  
-*/ 
+ * 6. Update reaction
+*/
 
 
 #include "math.h"
@@ -38,19 +38,19 @@
 
 using namespace SPPARKS_NS;
 
-enum{NOOP,BCC,NBCC};                          // all sites are on lattice, specicial site types (e.g., sinks) can be added  
-enum{VAC=0,INT,CE1,CE2,CE3,CE4,CE5,CE6,CE7,CE8};   // CE: chemical element 
+enum{NOOP,BCC,NBCC};                          // all sites are on lattice, specicial site types (e.g., sinks) can be added
+enum{VAC=0,INT,CE1,CE2,CE3,CE4,CE5,CE6,CE7,CE8};   // CE: chemical element
 
 #define DELTAEVENT 100000
 #define MAX2NN 6 // max # of 2NN for both FCC and BCC lattice
-#define BIGNUMBER 1e18 // define a big number 
+#define BIGNUMBER 1e18 // define a big number
 
 /* ---------------------------------------------------------------------- */
 
 AppSeg::AppSeg(SPPARKS *spk, int narg, char **arg) :
   AppLattice(spk,narg,arg)
 {
-  ninteger = 4; // first for lattice type,second for element, 3rd for SIA type 
+  ninteger = 5; // first for lattice type,second for element, 3rd for SIA type, 4th and 5th dumbbell atoms
   ndouble = 0;
   delpropensity = 2;
   delevent = 1;
@@ -60,7 +60,7 @@ AppSeg::AppSeg(SPPARKS *spk, int narg, char **arg) :
   engstyle = 0; //1 for 1NN interaction, 2 for 2NN interaction; default 0
   diffusionflag = 0; //flag for MSD calculations, 1 for yes, 0 for no; default 0
   concentrationflag = 0; //flag for concentration calculation
-  seg_flag = 0; 
+  seg_flag = 0;
   eisink_flag = 0;
 
   if (narg < 1) error->all(FLERR,"Illegal app_style command");
@@ -68,7 +68,7 @@ AppSeg::AppSeg(SPPARKS *spk, int narg, char **arg) :
   if (engstyle == 2) delpropensity += 1;// increase delpropensity for 2NN interaction
   if (narg >= 3) concentrationflag = atoi(arg[2]);
   if (narg >= 4) diffusionflag = atoi(arg[3]);
-  // calculate concentration fiels for each elements, so that concentrationflag = nelement 
+  // calculate concentration fiels for each elements, so that concentrationflag = nelement
   // if (concentrationflag) {ndouble += concentrationflag;}
   // ndiffusion = diffusionflag;
   // darray 1-4 for msd if activated, followed by concentrations, needs the initial atomic id, aid
@@ -95,7 +95,7 @@ AppSeg::AppSeg(SPPARKS *spk, int narg, char **arg) :
   hcount = NULL; //numner of vacancy switch events
   nn1flag = nn2flag = barrierflag = 0; //flags for bond energy and migration barriers
 
-  // flags and parameters for sinks, dislocations, reactions 
+  // flags and parameters for sinks, dislocations, reactions
   sink_flag = elastic_flag = moduli_flag = dislocation_flag = reaction_flag = acceleration_flag = 0; //flags for sink dislocation and vacancy
   nsink = ndislocation = nreaction = nballistic = ntrap = 0;
 
@@ -105,7 +105,7 @@ AppSeg::AppSeg(SPPARKS *spk, int narg, char **arg) :
   dislocation_radius = NULL;
 
   // arrays for sinks
-  isink = sink_shape = sink_normal = sink_segment = NULL; 
+  isink = sink_shape = sink_normal = sink_segment = NULL;
   sink_range = sink_radius = ci = sink_dr = sink_dt = sink_dt_new = sink_dt_old =  NULL;
   xsink = sink_mfp = NULL;
   nabsorption = nreserve = NULL;
@@ -129,11 +129,15 @@ AppSeg::AppSeg(SPPARKS *spk, int narg, char **arg) :
   numneigh2 = NULL;
   neighbor2 = NULL;
 
-  // ris 
+  // dumbbell
+  edumbbell = NULL;
+  vdumbbell = NULL;
+
+  // ris
   ris_type = NULL;
   ris_ci = ris_total = NULL;
 
-  // short range order 
+  // short range order
   total_neighbor = NULL;
   sro = NULL;
 }
@@ -153,6 +157,8 @@ AppSeg::~AppSeg()
   memory->destroy(ebond2);
   memory->destroy(mbarrier);
   memory->destroy(nsites_local);
+  memory->destroy(edumbbell);
+  memory->destroy(vdumbbell);
 
   if (engstyle == 2) {// memory use for 2NNs
     memory->destroy(numneigh2);
@@ -226,13 +232,13 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     nelement = atoi(arg[0]);   // num of elements
 
     memory->create(nsites_local,nelement,"app/seg:nsites_local");
-    memory->create(total_neighbor,nelement,"app/seg:total_neighbor"); //total number of neighbors of all type i atoms; needed for sro calculations 
+    memory->create(total_neighbor,nelement,"app/seg:total_neighbor"); //total number of neighbors of all type i atoms; needed for sro calculations
     memory->create(sro,nelement,nelement,"app/seg:sro"); //short range order matrix
-    memory->create(ci,nelement,"app/seg:ci"); //static concentration based on current configuration 
-    memory->create(ct,nelement,"app/seg:ct"); //time averaged concentration based on the fractional occupation at each site  
-    memory->create(ct_new,nelement,"app/seg:ct_new"); //time averaged concentration 
-    memory->create(ebond1,nelement,nelement,"app/seg:ebond1"); // 1NN bond energy 
-    if(diffusionflag) memory->create(Lij,nelement,nelement,"app/seg:Lij"); //Onsager coefficient 
+    memory->create(ci,nelement,"app/seg:ci"); //static concentration based on current configuration
+    memory->create(ct,nelement,"app/seg:ct"); //time averaged concentration based on the fractional occupation at each site
+    memory->create(ct_new,nelement,"app/seg:ct_new"); //time averaged concentration
+    memory->create(ebond1,nelement,nelement,"app/seg:ebond1"); // 1NN bond energy
+    if(diffusionflag) memory->create(Lij,nelement,nelement,"app/seg:Lij"); //Onsager coefficient
 
     hcount = new int [nelement]; // total numner of switching with a vacancy;
 
@@ -251,7 +257,7 @@ void AppSeg::input_app(char *command, int narg, char **arg)
   // 2NN bond energy taken in the order of 11 12 ... 1N; 22 ... 2N; ...; NN
   else if (strcmp(command,"ebond2") == 0) {
 
-    nelement = atoi(arg[0]);   // num of elements, just to be consistent with ebond1 
+    nelement = atoi(arg[0]);   // num of elements, just to be consistent with ebond1
     memory->create(ebond2,nelement,nelement,"app/seg:ebond2");
     if(narg != nelement*(nelement+1)/2+1) error->all(FLERR,"Illegal ebond2 command");
 
@@ -265,7 +271,36 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     }
   }
 
-  // migration barriers for each element. For V this is the migration barrier is set to be 0 (given by the elements). 
+  // formation energy of different types of SIAs defined by the two dumbbell atoms
+  // Note the total element include V and I, which are "needed" here but useless
+  else if (strcmp(command,"edumbbell") == 0) {
+
+    memory->create(edumbbell,nelement,nelement,"app/seg:edumbbell");
+    memory->create(fdumbbell,nelement,nelement,"app/seg:fdumbbell");
+    if(narg != nelement*(nelement+1)/2+1) error->all(FLERR,"Illegal edumbbell command");
+
+    nn2flag = 1;
+    for (i = 0; i < nelement; i++ ) {
+      for (j = i; j < nelement; j++ ) {
+        ibond = ibonde(i+1,j+1,nelement);
+        edumbbell[i][j] = atof(arg[ibond]);
+        if (j > i) edumbbell[j][i] = edumbbell[i][j];
+      }
+    }
+  }
+
+  // types of SIAs and the dumbbell vectors.
+  else if (strcmp(command, "dumbbell") ==0) {
+    ndumbbell = atoi(arg[0]); // number of dumbbell types
+    memory->create(vdumbbell,ndumbbell,3,"app/seg:vdumbbell");
+    for (i = 0; i < ndumbbell; i++) {
+        vdumbbell[i][0] = atof(arg[i*3])+1;
+        vdumbbell[i][1] = atof(arg[i*3])+2;
+        vdumbbell[i][2] = atof(arg[i*3])+3;
+    }
+  }
+
+  // migration barriers for each element. For V this is the migration barrier is set to be 0 (given by the elements).
   else if (strcmp(command, "migbarrier") ==0) {
 
     if (narg < nelement) error->all(FLERR,"Illegal migbarrier command, a barrier is needed for each element");
@@ -278,7 +313,7 @@ void AppSeg::input_app(char *command, int narg, char **arg)
   }
 
   // list of elements that interact with vacancy and interstitials.
-  // default 0 meaning no trapping; 1 means trapping. Need for all elements if defined  
+  // default 0 meaning no trapping; 1 means trapping. Need for all elements if defined
   else if (strcmp(command, "trap") ==0) {
 
     if (narg < nelement) error->all(FLERR,"Illegal trap command, a trap flag is needed for each element");
@@ -287,7 +322,7 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     }
   }
 
-  // elastic moduli for stress calculation, only for cubic system now 
+  // elastic moduli for stress calculation, only for cubic system now
   else if (strcmp(command, "moduli") ==0) {
 
     moduli_flag = 1;
@@ -334,7 +369,7 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     ndislocation ++;
   }
 
-  // elastic interaction with stress field via relaxed volume; can be extended for dipole tensor later 
+  // elastic interaction with stress field via relaxed volume; can be extended for dipole tensor later
   else if (strcmp(command, "elastic_interaction") ==0) {
 
     elastic_flag = 1;
@@ -343,18 +378,18 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     int iarg = narg/2;
     for (i = 0; i < iarg; i++) {
       int ei = i*2;  //element
-      evol[ei] = atof(arg[i*2+1]); //relaxation volume 
+      evol[ei] = atof(arg[i*2+1]); //relaxation volume
     }
   }
 
-  // define sinks to defects and element, one sink each line 
+  // define sinks to defects and element, one sink each line
   else if (strcmp(command, "sink") ==0) {
     if(narg != 8) error->all(FLERR,"illegal sink command");
     if(sink_flag == 0) memory->create(isink, nlattice,"app/seg:isink");
-    if(sink_flag == 0) {for(i = 0; i < nlattice; i++)  isink[i] = 0;} // set no sink initially 
+    if(sink_flag == 0) {for(i = 0; i < nlattice; i++)  isink[i] = 0;} // set no sink initially
     sink_flag = 1;
 
-    nsink ++;  // sink id starts from 1 
+    nsink ++;  // sink id starts from 1
     grow_sinks();
     sink_range[nsink] = atof(arg[0]); // thickness of sink
     sink_shape[nsink] = atoi(arg[1]); // 1 dislocation, 2 interface, 3 3D region
@@ -367,26 +402,26 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     sink_creation(nsink); //create the nth sink, can overlap with other sinks
   }
 
-  // define element-sink interaction by eisink. One element and one sink in each line. The id of a sink is the order in sink commands, starting from 1    
+  // define element-sink interaction by eisink. One element and one sink in each line. The id of a sink is the order in sink commands, starting from 1
   else if (strcmp(command, "sink_interaction") ==0) {
 
     if(sink_flag == 0) error->all(FLERR,"sink_interaction needs to be defined after the sink command");
     if (narg < 3) error->all(FLERR,"Illegal sink_interaction command");
-    if (eisink_flag == 0) {// create element-sink interaction.  
+    if (eisink_flag == 0) {// create element-sink interaction.
        eisink_flag = 1;
-       memory->create(eisink,nelement,nsink+1,"app/ris:eisink");   
-       memory->create(nabsorption,nelement,nsink+1,"app/ris:nabsorption");   
-       memory->create(nreserve,nelement,nsink+1,"app/ris:nreserve");   
-       memory->create(sink_mfp,nelement,nsink+1,"app/ris:sink_mfp");   
+       memory->create(eisink,nelement,nsink+1,"app/ris:eisink");
+       memory->create(nabsorption,nelement,nsink+1,"app/ris:nabsorption");
+       memory->create(nreserve,nelement,nsink+1,"app/ris:nreserve");
+       memory->create(sink_mfp,nelement,nsink+1,"app/ris:sink_mfp");
        for (i = 0; i < nelement; i++ ) {
            for (j = 0; j < nsink+1; j++ ) {
-	       eisink[i][j] = 0.0;  // eisink = 0.0: no inteaction; eisink< -100: complete absortion; others: trapping or repulsion 
+	       eisink[i][j] = 0.0;  // eisink = 0.0: no inteaction; eisink< -100: complete absortion; others: trapping or repulsion
                nabsorption[i][j] = 0;
 	       nreserve[i][j] = 0;
                sink_mfp[i][j] = 1.0;
            }
-       }  
-    } 
+       }
+    }
 
     int eletype = atoi(arg[0]); // element starts from 0
     int sinkid = atoi(arg[1]); // sink id starts from 1
@@ -405,15 +440,15 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     if(sinkmotion_flag == 0)  memory->create(sink_dt_old, nsink+1, "app/seg:sink_dt_old");
     sinkmotion_flag = 1;
 
-    for (i = 0; i < nsink+1; i++) {sink_dr[i] = -1.0; sink_dt[i] = 0.0;} // by default no sink motion  
+    for (i = 0; i < nsink+1; i++) {sink_dr[i] = -1.0; sink_dt[i] = 0.0;} // by default no sink motion
 
     int nseg = narg/3;
     for (i = 0; i < nseg; i++) {
-        int sinkid = atoi(arg[i*3]); // sinkid start from 1 
+        int sinkid = atoi(arg[i*3]); // sinkid start from 1
         if(sinkid > nsink) error->all(FLERR,"sink_motion needs to be defined after the sink command");
-        sink_dr[sinkid] = atoi(arg[i*3+1]); // direction of sink motion (1 for x, 2 for y, and 3 or z), each step the displacement is a0/2 
+        sink_dr[sinkid] = atoi(arg[i*3+1]); // direction of sink motion (1 for x, 2 for y, and 3 or z), each step the displacement is a0/2
         double velocity = atof(arg[i*3+2]); // a0/s
-        sink_dt[sinkid] = 0.5e12/velocity; // timestep for sink motion, in picosecond; the displacement each step is 0.5 
+        sink_dt[sinkid] = 0.5e12/velocity; // timestep for sink motion, in picosecond; the displacement each step is 0.5
     }
   }
 
@@ -435,13 +470,13 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     nreaction ++;
   }
 
-  // calculate ris for designated elements 
+  // calculate ris for designated elements
   else if (strcmp(command, "calris") ==0) {
     seg_flag = 1;
-    
+
     if(nelement <= 0) error->all(FLERR,"calris: no elements have been defined!");
     memory->create(ris_type,nelement, "app/seg:ris_type");
-    memory->create(ris_ci,nelement, "app/seg:ris_ci"); // nominal concentration as the reference 
+    memory->create(ris_ci,nelement, "app/seg:ris_ci"); // nominal concentration as the reference
     memory->create(ris_total,nelement, "app/seg:ris_total");
     int iarg = narg/2;
 
@@ -452,7 +487,7 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     }
   }
 
-  // frenkel pair production   
+  // frenkel pair production
   else if (strcmp(command, "frenkelpair") ==0) {
     frenkelpair_flag = 1;
 
@@ -464,8 +499,8 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     self_ion_ratio = 0.0;
     if(narg == 2) fpdistance = atof(arg[1]);// Frenkel pair separation
     if(narg == 4) {
-	    self_ion_ratio = atof(arg[2]);// self-ion versus dpa 
-	    self_ion_type = atof(arg[3]);// self-ion type 
+	    self_ion_ratio = atof(arg[2]);// self-ion versus dpa
+	    self_ion_type = atof(arg[3]);// self-ion type
     }
     //fpdistance *= fpdistance;
 
@@ -473,18 +508,18 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     if(min_fpfreq > fpfreq) min_fpfreq = fpfreq;
   }
 
-  // ballistic mixing   
+  // ballistic mixing
   else if (strcmp(command, "ballistic") ==0) {
     ballistic_flag = 1;
 
     if(narg < 2) error->all(FLERR,"illegal ballistic command");
     grow_ballistic();
 
-    double mix_rate = atof(arg[0]);// mixing rate (in unit of dpa/s) 
-    bdistance = 0.0;  
+    double mix_rate = atof(arg[0]);// mixing rate (in unit of dpa/s)
+    bdistance = 0.0;
     bdistance = atof(arg[1]);// mixing range
 
-    bfreq[nballistic] = 1e12/nlocal/mix_rate; // time interval for mixing 
+    bfreq[nballistic] = 1e12/nlocal/mix_rate; // time interval for mixing
     if(min_bfreq > bfreq[nballistic]) min_bfreq = bfreq[nballistic];
     nballistic ++; // number of mixing events
   }
@@ -527,7 +562,7 @@ void AppSeg::define_2NN()
     }
 
     for (j = 0; j < ncandidate; j++) {
-      if(frequency[j] < 0) continue; // jd already observed earlier 
+      if(frequency[j] < 0) continue; // jd already observed earlier
       jd = candidate[j];
       frequency[j]++;
       for (k = j+1; k < ncandidate; k++) {
@@ -558,8 +593,9 @@ void AppSeg::grow_app()
 {
   type = iarray[0];   // lattice type; i1 in input
   element = iarray[1];  // element type; i2 in input
-  dmb1 = iarray[2]; // dumbbell atom 1 
-  dmb2 = iarray[3]; // dumbbell atom 2 
+  siatype = iarray[2]; // type of sias
+  dmb1 = iarray[3]; // dumbbell atom 1
+  dmb2 = iarray[4]; // dumbbell atom 2
 
   if(diffusionflag)   aid = iarray[4]; // initially set as global ID, must use set i3 unique in command line
   if(diffusionflag)   disp = darray; // msd; zero initially
@@ -583,8 +619,12 @@ void AppSeg::init_app()
 {
   int i,j;
 
+  // constant KBT
+  double KB = 0.00008617;
+  KBT = temperature * KB;
+
   // define second nearest neighbor
-  if (engstyle ==2) define_2NN();
+  if (engstyle == 2) define_2NN();
 
   if (firsttime) {
     firsttime = 0;
@@ -596,23 +636,24 @@ void AppSeg::init_app()
     esites = new int[3 + 3*maxneigh];
   }
 
-  // site statistics and sink reserved elements 
+  // site statistics and sink reserved elements
   int flag = 0;
   for ( i = 0; i < nelement; i++) nsites_local[i] = 0;
 
   for ( i = 0; i < nlocal; i++) {
     if (type[i] < BCC || type[i] > NBCC) (FLERR,"One or more sites have invalid crystal type");
-    if (element[i] < VAC || element[i] > CE8) (FLERR,"One or more sites have invalid chemical type"); 
+    if (element[i] < VAC || element[i] > CE8) (FLERR,"One or more sites have invalid chemical type");
     nsites_local[element[i]]++;
   }
 
-  // calculate initial global concentration 
+  // calculate initial global concentration
   int ntotal = 0;
-  for ( i = 0; i < nelement; i++) ntotal += nsites_local[i]; 
-  for ( i = 0; i < nelement; i++) ci[i] = 1.0*nsites_local[i]/ntotal; // need correction for V and SIA 
+  for ( i = 0; i < nelement; i++) ntotal += nsites_local[i];
+  for ( i = 0; i < nelement; i++) ci[i] = 1.0*nsites_local[i]/ntotal; // need correction for V and SIA
 
-  // initialize predefined INT by adding the two dumbbell atoms proportional to the concentrations 
-  set_dumbbell(); 
+  // initialize predefined INT by adding the two dumbbell atoms proportional to the concentrations
+  dumbbell_fraction();
+  set_dumbbell();
 
   //check if reactions need to be enabled or disabled
   if(reaction_flag) {
@@ -624,8 +665,8 @@ void AppSeg::init_app()
     }
   }
 
-  // initial recombination, elements created on sinks will be absorbed 
-  nFPair = 0; 
+  // initial recombination, elements created on sinks will be absorbed
+  nFPair = 0;
   for (i = 0; i < nelement; i++) nrecombine[i] = 0;
   for (i = 0; i < nlocal; i++) recombine(i);
 
@@ -637,7 +678,7 @@ void AppSeg::init_app()
     }
   }
 
-  // initialize the time_list for sink motion  
+  // initialize the time_list for sink motion
   if(sinkmotion_flag) {
     for(i = 0; i < nsink+1; i ++) {
        sink_dt_new[i] = 0.0;
@@ -645,7 +686,7 @@ void AppSeg::init_app()
     }
   }
 
-  // initialize the diffusion parameters 
+  // initialize the diffusion parameters
   if(diffusionflag) {
     for(i = 0; i < 4; i ++) { // four component of diffusion
       for(j = 0; j < nlocal; j++){
@@ -660,17 +701,17 @@ void AppSeg::init_app()
     }
   }
 
- //initialize the concentration vectors 
+ //initialize the concentration vectors
 if(concentrationflag) {
   //concentration_field();
-  dt_new = 0.0; 
+  dt_new = 0.0;
   for(i = 0; i < nelement; i ++) {
-     ct[i] = 0.0; 
-     ct_new[i] = 0.0; 
+     ct[i] = 0.0;
+     ct_new[i] = 0.0;
      //for(j = 0; j < nlocal; j ++) {
 	//ct_site[j][i] = 0.0;
      //}
-  } 
+  }
 }
 
  // initialization for short range order
@@ -681,9 +722,9 @@ if(concentrationflag) {
     }
  }
 
- // initialize solute trapping 
+ // initialize solute trapping
  for(i = 0; i < nelement; i++) trap[i] = 0;
-    
+
 /*
   // initiate parameters for vacancy trapping
   if(time_flag) {
@@ -698,37 +739,64 @@ if(concentrationflag) {
 }
 
 /* ---------------------------------------------------------------------- */
-/* ---------------------------initiation of looing-up list -------------- */
+/* ----- compute thermal sia fractions based on formation energy -------- */
+
+void AppSeg::dumbbell_fraction()
+{
+ int i,j;
+
+ double exp_total = 0.0;
+ for (i = CE1; i < nelement; i ++) {
+     for (j = i+1; j < nelement; j ++) {
+	 fdumbbell[i][j] = exp(-edumbbell[i][j]/KBT);
+         exp_total += fdumbbell[i][j];
+     }
+ }
+
+ for (i = CE1; i < nelement; i ++) {
+     for (j = i+1; j < nelement; j ++) {
+	 fdumbbell[i][j] /= exp_total;
+         fdumbbell[j][i] = fdumbbell[i][j];
+     }
+ }
+
+ return;
+}
+
+/* ---------------------------------------------------------------------- */
+/* ------- set initial dumbbells according to the composition ----------- */
 
 void AppSeg::set_dumbbell()
 {
  int i,j;
- double ctotal = 0.0; 
+ double ctotal = 0.0;
 
  if(nsites_local[INT] == 0) return;
  for (i = CE1; i < nelement; i++) ctotal += ci[i];
- 
+
  for (i = 0; i < nlocal; i++) {
      if(element[i] != INT) {
-	dmb1[i] = -1; 
+	dmb1[i] = -1;
         dmb2[i] = -1;
+	siatype[i] = -1;
      } else {
-        double randme1 = ranseg->uniform()*ctotal; //get 2 random # to find 2 dumbbell atoms
-        double randme2 = ranseg->uniform()*ctotal;
+ 	siatype[i] = static_cast<int>(ranseg->uniform()*3);
 
 	j = CE1;
+	double randme1 = ranseg->uniform()*ctotal; //get 2 random # to find 2 dumbbell atoms
+        double randme2 = ranseg->uniform()*ctotal;
 	while(dmb1[i] <= 0) {
             if(randme1 < ci[j]) dmb1[i] = j;
 	    randme1 -= ci[j];
-	    j++; 
+	    j++;
             if(j==nelement) dmb1[i] = nelement - 1;
-	}     
+	}
 
 	j = CE1;
 	while(dmb2[i] <= 0) {
             if(randme2 < ci[j]) dmb2[i] = j;
 	    randme2 -= ci[j];
-	    j++; 
+	    j++;
             if(j==nelement) dmb2[i] = nelement - 1;
 	}
      }	
@@ -750,14 +818,11 @@ void AppSeg::setup_app()
   for (int i = 0; i < maxevent; i++) events[i].next = i+1;
   freeevent = 0;
 
-  // flag check and temperature 
+  // flag check and temperature
   if(temperature == 0.0) error->all(FLERR,"Temperature cannot be 0.0 for app seg");
   if(nn1flag == 0) error->all(FLERR, "First neareast neighbor bond not defined: AppSeg");
   if(nn2flag == 0 && engstyle == 2) error->all(FLERR, "Second nearest neighbor bond not defined: AppSeg");
   if(barrierflag == 0) error->warning(FLERR, "Diffusion barrier not defined: AppSeg");
-
-  double KB = 0.00008617;
-  KBT = temperature * KB;
 
   // simulation cell dimension and volume
   periodicity[0] = domain->xperiodic;
@@ -783,7 +848,7 @@ double AppSeg::sites_energy(int i, int estyle)
   int j,jd,ejd,n1nn;
   double eng = 0.0;
   double cij = 0.0;
-  
+
   if(estyle == 0) return eng;
 
   //energy from 1NN bonds
@@ -793,14 +858,14 @@ double AppSeg::sites_energy(int i, int estyle)
     jd = neighbor[i][j];
     ejd = element[jd];
 
-    //adjust A-V bond based on local concentration, currently added for solute trapping  
+    //adjust A-V bond based on local concentration, currently added for solute trapping
     if(trap[ei] && ejd == VAC) {
        cij = site_concentration(i,estyle);
        eng += cij*ebond1[ei][ejd];
     } else if(trap[ejd] && ei == VAC) {
        cij = site_concentration(jd,estyle);
        eng += cij*ebond1[ei][ejd];
-    } else {   
+    } else {
        eng += ebond1[ei][ejd];
     }
   }
@@ -811,44 +876,42 @@ double AppSeg::sites_energy(int i, int estyle)
     for (j = 0; j < n2nn; j++) {
       jd = neighbor2[i][j];
       ejd = element[jd];
-    
-      //adjust A-V bond based on local concentration 
+
+      //adjust A-V bond based on local concentration
       if(trap[ei] && ejd == VAC) {
          cij = site_concentration(i,estyle);
          eng += cij*ebond2[ei][ejd];
       } else if(trap[ejd] && ei == VAC) {
          cij = site_concentration(jd,estyle);
          eng += cij*ebond2[ei][ejd];
-      } else {   
+      } else {
          eng += ebond2[ei][ejd];
       }
     }
   }
 
-  //a correction term may be added for the different energies of different interstitials 
-
-  //bond energy shared equally by i & j 
+  //bond energy shared equally by i & j
   return eng/2.0;
 }
 
 /* ----------------------------------------------------------------------
-  compute local concentration to adjust solute-V bond energy  
+  compute local concentration to adjust solute-V bond energy
 ------------------------------------------------------------------------- */
 
 double AppSeg::site_concentration(int i, int estyle)
-{ 
+{
   double cij = 0.0;
   int n1nn = numneigh[i]; //num of 1NN
-  
-  for(int j = 0; j < n1nn; j++) { 
+
+  for(int j = 0; j < n1nn; j++) {
      int jd = neighbor[i][j];
-     if(element[jd]==VAC) cij ++; 
+     if(element[jd]==VAC) cij ++;
   }
 
   if(estyle == 1)  {
      cij = 0.5 - (cij-1)/n1nn;
-     if(cij < 0.0) cij = 0.0; // attract to up to half of n1nn solutes 
-     return 2*cij; 
+     if(cij < 0.0) cij = 0.0; // attract to up to half of n1nn solutes
+     return 2*cij;
   }
 
   int n2nn = numneigh2[i];  //num of 2NN
@@ -878,93 +941,182 @@ double AppSeg::elastic_energy(int i, int itype)
   return eng;
 }
 /* ----------------------------------------------------------------------
-  compute barriers for an exchange event between i & j except sias 
+  compute barriers for an exchange event between i & j except sias
 ------------------------------------------------------------------------- */
 
 double AppSeg::site_SP_energy(int i, int j, int estyle)
 {
   double eng = 0.0;
-  double eng0i, eng0j, eng1i, eng1j; //energy before and after jump
+  double eng0i, eng0j, eng1i, eng1j; // energy before and after jump
   int ei = element[i];
   int ej = element[j];
 
   eng0i = sites_energy(i,estyle); //total bonds with i initially,
   eng0j = sites_energy(j,estyle); //total bonds with j initially
 
-  // switch the element and recalculate the site energy 
+  // switch the element and recalculate the site energy
   element[i] = ej;
-  element[j] = ei; 
+  element[j] = ei;
   eng1i = sites_energy(i,estyle); //total bonds with i after switch
-  eng1j = sites_energy(j,estyle); //total bonds with j after switch 
+  eng1j = sites_energy(j,estyle); //total bonds with j after switch
 
-  // switch back 
-  element[j] = ej; 
-  element[i] = ei; 
+  // switch back
+  element[j] = ej;
+  element[i] = ei;
 
   //for vacancy the barrier is given by the element to be switched;
   if(ei == VAC) eng = mbarrier[ej] + eng1i + eng1j - eng0i -eng0j;
 
-  //for other atoms the diffusion barrier is given by itself 
+  //for other atoms the diffusion barrier is given by itself
   if(ei > INT) eng = mbarrier[ei] + eng1i + eng1j - eng0i -eng0j;
 
-  //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink  
-  if(eisink_flag && (isink[i] > 0 || isink[j] > 0)) 
-    eng += (eisink[ei][isink[j]] - eisink[ei][isink[i]] + eisink[ej][isink[i]] - eisink[ej][isink[j]])/2.0;  
-  
+  //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink
+  if(eisink_flag && (isink[i] > 0 || isink[j] > 0))
+    eng += (eisink[ei][isink[j]] - eisink[ei][isink[i]] + eisink[ej][isink[i]] - eisink[ej][isink[j]])/2.0;
+
   //add elastic contribution if applicable
-  if(elastic_flag) 
+  if(elastic_flag)
     eng += (elastic_energy(j,ei) - elastic_energy(i,ei) + elastic_energy(i,ej) - elastic_energy(j,ej))/2.0;
 
   return eng;
 }
 
 /* ----------------------------------------------------------------------
-  compute barriers for an exchange event between i & j, with i being an SIA 
+  compute barriers for an exchange event between i & j, with i being an SIA
 ------------------------------------------------------------------------- */
 
-double AppSeg::sia_SP_energy(int i, int j, int m, int n, int estyle)
+double AppSeg::sia_SP_energy(int i, int j, int estyle)
 {
   double eng = 0.0;
   double eng0i, eng0j, eng1i, eng1j; //energy before and after jump
   int ei = element[i];
   int ej = element[j];
-  int sia1 = dmb1[i];
-  int sia2 = dmb2[i];
+  int sia[3];
+  int itype = siatype[i];
+  double *vect=vdumbbell[itype];
+
+  // check if there is an i->j diffusion path
+  double dij[3];
+  dij[0] = dij[1] = dij[2] = 0.0;
+  for (int k = 0; k < 3; k++) { // vector dij
+      dij[k] = xyz[j][k] - xyz[i][k];
+      if (periodicity[k] && dij[k] >= lprd[k]/2.0) dij[k] -= lprd[k];
+      if (periodicity[k] && dij[k] < -lprd[k]/2.0) dij[k] += lprd[k];
+  }
+
+  double prdt = dij[0]*vect[0] + dij[1]*vect[1] + dij[2]*vect[2];
+  if (prdt == 0.0) return -1.0; // dumb1 diffuses to upper or lower planes
+
+  // calcualte barrier if i->j exists
+
+  // determine which dumbbell atom diffuses
+  int m = 1; // m diffuses
+  int n = 2; // n stays at site i
+  if(itype == 0 && dij[0] < 0) m = 2;
+  if(itype == 1 && dij[1] < 0) m = 2;
+  if(itype == 2 && dij[2] < 0) m = 2;
+  if(m == 2) n = 1;
+
+  sia[1] = dmb1[i];
+  sia[2] = dmb2[i];
 
   eng0i = sites_energy(i,estyle); //total bonds with i initially,
   eng0j = sites_energy(j,estyle); //total bonds with j initially
+  eng0i += edumbbell[sia[1]][sia[2]]; // add sia formation energy
 
-  // remove a dumbbell at i with the element m stays at i (m == sia1) 
-  element[i] = m;
+  // remove a dumbbell at i with the element m stays at i (m == sia1)
+  element[i] = sia[n];
   dmb1[i] = -1;
   dmb2[i] = -1;
+  siatype[i] = -1;
 
-  // form a new dumbbell at j  
+  // form a new dumbbell at j
+  // assign the new dumbbell atoms, not needed right now
+  /*if(siatype[i] == 0) { // [100]
+     if(dij[2] == 0 ) {
+	 siatype[j] = 1; // [010]
+	 if(dij[1] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     } else {
+	 siatype[j] = 2; // [001]
+	 if(dij[2] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     }
+  } else if(siatype[i] == 1) {// [010]
+     if(dij[2] == 0 ) {
+	 siatype[j] = 0; // [100]
+	 if(dij[0] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     } else {
+	 siatype[j] = 2; // [001]
+	 if(dij[2] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     }
+  } else { // [001]
+     if(dij[1] == 0 ) {
+	 siatype[j] = 0; // [100]
+	 if(dij[0] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     } else {
+	 siatype[j] = 1; // [010]
+	 if(dij[1] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     }
+  }*/
+
   element[j] = ei;
-  dmb1[j] = ej; // this dose not matter right now but may when the exact diffusion path is needed 
-  dmb2[j] = n;  // ej goes to dmb1 and n goes to dmb2 
-  
-  eng1i = sites_energy(i,estyle); //total bonds with i after switch
-  eng1j = sites_energy(j,estyle); //total bonds with j after switch 
 
-  // switch back 
-  element[j] = ej; 
+  eng1i = sites_energy(i,estyle); // total bonds with i after switch
+  eng1j = sites_energy(j,estyle); // total bonds with j after switch
+  eng0i += edumbbell[ej][sia[m]]; // dumbbell at j contains ej and sia[m]
+
+  // switch back
+  element[j] = ej;
   element[i] = ei;
-  
-  dmb1[i] = sia1; 
-  dmb2[i] = sia2;
-  dmb1[j] = -1; 
-  dmb2[j] = -1;
 
-  //for SIA the diffusion is given by itself, correction may be added for different types of interstitials 
+  dmb1[i] = sia[1];
+  dmb2[i] = sia[2];
+  siatype[i] = itype;
+
+  //for SIA the diffusion is given by itself, correction may be added for different types of interstitials
   eng = mbarrier[ei] + eng1i + eng1j - eng0i -eng0j;
 
-  //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink  
-  if(eisink_flag && (isink[i] > 0 || isink[j] > 0)) 
-    eng += (eisink[ei][isink[j]] - eisink[ei][isink[i]] + eisink[ej][isink[i]] - eisink[ej][isink[j]])/2.0;  
+  //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink
+  if(eisink_flag && (isink[i] > 0 || isink[j] > 0))
+    eng += (eisink[ei][isink[j]] - eisink[ei][isink[i]] + eisink[ej][isink[i]] - eisink[ej][isink[j]])/2.0;
 
   //add elastic contribution if applicable
-  if(elastic_flag) 
+  if(elastic_flag)
     eng += (elastic_energy(j,ei) - elastic_energy(i,ei) + elastic_energy(i,ej) - elastic_energy(j,ej))/2.0;
 
   return eng;
@@ -980,14 +1132,14 @@ double AppSeg::site_propensity(int i)
   int j, k, iid, jid, sflag;
 
   clear_events(i);
-  int ei = element[i]; 
+  int ei = element[i];
   double prob_reaction = 0.0;
   double prob_hop = 0.0;
   double ebarrier = 0.0;
   double hpropensity = 0.0;
   double deltaE = 0.0;
 
-  // Check possible reactions with barriers 
+  // Check possible reactions with barriers
   if(reaction_flag) { //reaction flag
     for(j = 0; j < nreaction; j++) {
       if(renable[j] == 0) continue;
@@ -995,7 +1147,7 @@ double AppSeg::site_propensity(int i)
         iid = rinput[j];
         jid = routput[j];
 
-        if(eisink_flag && eisink[element[jid]][isink[i]] != 0.0) continue; //no production at sink 
+        if(eisink_flag && eisink[element[jid]][isink[i]] != 0.0) continue; //no production at sink
        	deltaE = -sites_energy(i,engstyle); //site energy before reaction
         element[i] = jid;
         deltaE += sites_energy(i,engstyle);  //site energy after reaction
@@ -1012,33 +1164,33 @@ double AppSeg::site_propensity(int i)
   if (ei > INT) return prob_reaction;
 
   // for hopping event propensity, the barrier is calculated by site_SP_energy();
-  if (ei == VAC) { // vacancy hopping 
+  if (ei == VAC) { // vacancy hopping
     for (j = 0; j < numneigh[i]; j++) {
       jid = neighbor[i][j];
       if(element[jid] <= INT) continue; // no vacancy-SIA exchange;
       ebarrier = site_SP_energy(i,jid,engstyle); // diffusion barrier
-      hpropensity = exp(-ebarrier/KBT);
-      add_event(i,jid,1,-1,hpropensity);
-      prob_hop += hpropensity;
+
+      if(ebarrier >= 0) {
+        hpropensity = exp(-ebarrier/KBT);
+        add_event(i,jid,1,-1,hpropensity);
+        prob_hop += hpropensity;
+      }
     }
-  } else if (ei > VAC) {// SIA hopping 
+  } else if (ei > VAC) {// SIA hopping
     for (j = 0; j < numneigh[i]; j++) {
       jid = neighbor[i][j];
       if(element[jid] == INT) continue; // no SIA-SIA exchange;
 
-      //two events are added here, each taking one element from the dumbell,and add it to jid to form a new dumbbell 
-      //This assumes that the SIA is free to rotate and it may induce artificial diffsuion if not the case. 
-      //This may mis-estimate the diffusion rate of interstitials and homogenizes the diffusivity of different interstitials 
-
-      ebarrier = sia_SP_energy(i,jid,dmb1[i],dmb2[i],engstyle); // dmb1 stays at i
-      hpropensity = exp(-ebarrier/KBT);
-      add_event(i,jid,1,dmb2[i],hpropensity);
-      prob_hop += hpropensity;
-
-      ebarrier = sia_SP_energy(i,jid,dmb2[i],dmb1[i],engstyle); // dmb2 stays at i
-      hpropensity = exp(-ebarrier/KBT);
-      add_event(i,jid,1,dmb1[i],hpropensity);
-      prob_hop += hpropensity; 
+      ebarrier = sia_SP_energy(i,jid,engstyle); //
+      if(ebarrier >= 0) {
+	hpropensity = exp(-ebarrier/KBT);
+      	add_event(i,jid,1,1,hpropensity);
+        prob_hop += hpropensity;
+      }
+      //ebarrier = sia_SP_energy(i,jid,2,engstyle); // dmb2 stays at i
+      //hpropensity = exp(-ebarrier/KBT);
+      //add_event(i,jid,1,dmb1[i],hpropensity);
+      //prob_hop += hpropensity;
     }
   }
   return prob_hop + prob_reaction;
@@ -1072,27 +1224,27 @@ void AppSeg::site_event(int i, class RandomPark *random)
   j = events[ievent].jpartner;
 
   // switch element between site i and jpartner for hop diffusion
-  // style 3 and 4 not currently used 
+  // style 3 and 4 not currently used
   if(rstyle == 1 || rstyle == 3 || rstyle ==4) {
     k = element[i];
-    if (rstyle == 4) { // switch with a 1NN of which, accelerated diffusion event 
+    if (rstyle == 4) { // switch with a 1NN of which, accelerated diffusion event
        l = element[which];
        element[i] = l;
        element[which] = element[j];
        element[j] = k;
     } else { // switch with a 1NN of i
-      if(k==VAC) { //VAC mechanism 
+      if(k==VAC) { //VAC mechanism
         element[i] = element[j];
         element[j] = k;
-      } else { //SIA switch 
-        SIA_switch(i,j,which);  
+      } else { //SIA switch
+        SIA_switch(i,j);
       }
     }
 
     hcount[element[i]] ++;
 
     // calculate MSD for each atom if activated. How to implement with defect annihilation???
-    // this needs to be updated to track interstitial diffusion 
+    // this needs to be updated to track interstitial diffusion
     if(diffusionflag) {
       // switch global atomic id
       k = aid[i];
@@ -1133,14 +1285,14 @@ void AppSeg::site_event(int i, class RandomPark *random)
   }
 
   // perform zero_barrier events: absorption and recombination
-  int rid = recombine(i); // recombine site i with its neighbor rid 
+  int rid = recombine(i); // recombine site i with its neighbor rid
   if(rid >= 0) update_propensity(rid);
 
-  //recombine j with its neighbors too after hopping; 
+  //recombine j with its neighbors too after hopping;
   if(rstyle == 1 || rstyle == 3 || rstyle == 4) {
-    int rid = recombine(j); // recombine site i with its neighbor rid 
+    int rid = recombine(j); // recombine site i with its neighbor rid
     if(rid >= 0) update_propensity(rid);
- 
+
     //sink absorption of element[j] after hopping,for hop only since no element produced at its sinks
     if(nsink > 0) {
       absorption(i);
@@ -1149,13 +1301,13 @@ void AppSeg::site_event(int i, class RandomPark *random)
   }
 
   // compute propensity changes for participating sites i & j and their neighbors
-  // note that when solving using sector, j or neighbors of i may not belong to the current sector so not updated  
+  // note that when solving using sector, j or neighbors of i may not belong to the current sector so not updated
   // recommend to solve with "sector no" option
 
   update_propensity(i);
   if(rstyle == 1 || rstyle == 3 || rstyle == 4) update_propensity(j);
 
-  // check if any reactions needs to be disabled or enabled 
+  // check if any reactions needs to be disabled or enabled
   if(reaction_flag == 1) {
     for(ii = 0; ii < nreaction; ii ++) {
       if(target_local[ii] <= 0 && renable[ii] == 1) {
@@ -1312,26 +1464,106 @@ void AppSeg::clear_events(int i)
 }
 
 /* ----------------------------------------------------------------------
-   Perform SIA switch with an element 
+   Perform SIA switch with an element
 ------------------------------------------------------------------------- */
 
-void AppSeg::SIA_switch(int i, int j, int m)
+void AppSeg::SIA_switch(int i, int j)
 {
   int ei = element[i];
   int ej = element[j];
+  int itype = siatype[i];
   nsites_local[ei] --;
   nsites_local[ej] --;
 
-  //remove the interstitial at site i
-  if(m == dmb1[i]) {element[i] = dmb2[i];
-  } else {element[i] = dmb1[i];} 
+  // determine the atom that diffuses
+  int m = 1; // m diffuses
+  int n = 2; // n stays
+  int sia[3];
+
+  sia[1] = dmb1[i];
+  sia[2] = dmb2[i];
+
+  double dij[3];
+  dij[0] = dij[1] = dij[2] = 0.0;
+  for (int k = 0; k < 3; k++) { // vector dij
+      dij[k] = xyz[j][k] - xyz[i][k];
+      if (periodicity[k] && dij[k] >= lprd[k]/2.0) dij[k] -= lprd[k];
+      if (periodicity[k] && dij[k] < -lprd[k]/2.0) dij[k] += lprd[k];
+  }
+
+  if(itype == 0 && dij[0] < 0) m = 2;
+  if(itype == 1 && dij[1] < 0) m = 2;
+  if(itype == 2 && dij[2] < 0) m = 2;
+  if(m == 2) n = 1;
+
+  // determine the initial and the resulting sia types and dumbbell atoms
+  if(itype == 0) { // [100]
+     if(dij[2] == 0 ) {
+	 siatype[j] = 1; // [010]
+	 if(dij[1] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     } else {
+	 siatype[j] = 2; // [001]
+	 if(dij[2] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     }
+  } else if(itype == 1) {// [010]
+     if(dij[2] == 0 ) {
+	 siatype[j] = 0; // [100]
+	 if(dij[0] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     } else {
+	 siatype[j] = 2; // [001]
+	 if(dij[2] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     }
+  } else { // [001]
+     if(dij[1] == 0 ) {
+	 siatype[j] = 0; // [100]
+	 if(dij[0] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     } else {
+	 siatype[j] = 1; // [010]
+	 if(dij[1] > 0) {
+	    dmb1[j] = ej;
+	    dmb2[j] = sia[m];
+	 }  else {
+	    dmb2[j] = ej;
+	    dmb1[j] = sia[m];
+	 }
+     }
+  }
+
+  element[i] = sia[n];
+  siatype[i] = -1;
   dmb1[i] = -1;
   dmb2[i] = -1;
-
-  element[j] = INT;
-  dmb1[j] = ej; 
-  dmb2[j] = m; 
-
+  element[j] = ei;
   nsites_local[element[i]] ++;
   nsites_local[element[j]] ++;
 
@@ -1340,7 +1572,7 @@ void AppSeg::SIA_switch(int i, int j, int m)
 
 /* ----------------------------------------------------------------------
   add an acceleration event to list for site I
-  return a propensity, Not used here (to be develeted or updated) 
+  return a propensity, Not used here (to be develeted or updated)
 ------------------------------------------------------------------------- */
 
 double AppSeg::add_acceleration_event(int i, int j)
@@ -1460,7 +1692,7 @@ void AppSeg::add_event(int i, int j, int rstyle, int which, double propensity)
 }
 
 /* ----------------------------------------------------------------------
-   check if new Frenkal pairs need to be generated 
+   check if new Frenkal pairs need to be generated
 ------------------------------------------------------------------------- */
 void AppSeg::check_frenkelpair(double t)
 {
@@ -1478,71 +1710,72 @@ void AppSeg::check_frenkelpair(double t)
 }
 
 /* ----------------------------------------------------------------------
-  Create Frenkel pairs randomly. may need to scale the dose rate 
-  by the # of processors when work in parallel. Currently, Frenkel Pairs 
-  are always produced by the same processor. To be modified later.  
+  Create Frenkel pairs randomly. may need to scale the dose rate
+  by the # of processors when work in parallel. Currently, Frenkel Pairs
+  are always produced by the same processor. To be modified later.
 ------------------------------------------------------------------------- */
 void AppSeg::frenkelpair()
-{ 
+{
   int i,id,vid,iid;
-  
+
   // creat an vacancy
   int allsites = 0;
   for (i = CE1; i < nelement; i++) allsites += nsites_local[i];
   if(allsites == 0) error->all(FLERR, "No matrix sites available for FP generation!");
-  
-  nFPair ++;   
+
+  nFPair ++;
   int findv = 1;
-  int velement = -1; 
-  while (findv) { 
+  int velement = -1;
+  while (findv) {
     id = static_cast<int> (nlocal*ranseg->uniform());
     if(id < nlocal && element[id] > INT) {
       velement = element[id];
-      element[id] = VAC;  
+      element[id] = VAC;
       nsites_local[VAC] ++;
       nsites_local[velement] --;
-      
-      // recalculate the propensity if defects are generated 
+
+      // recalculate the propensity if defects are generated
       update_propensity(id);
       vid = id;
       findv = 0;
     }
   }
-  
+
   //create an interstitial
-  int findi = 1; 
+  int findi = 1;
   int ielement = -1;
-  while (findi) { 
+  while (findi) {
     id = static_cast<int> (nlocal*ranseg->uniform());
 
     if(id < nlocal && element[id] > INT) {
-      if(fpdistance == 0.0) {// no requirement on fpdistance    
+      if(fpdistance == 0.0) {// no requirement on fpdistance
 	findi = 0;
       } else {
         double dij = distanceIJ(vid,id);
-        if(dij <= fpdistance) { 
+        if(dij <= fpdistance) {
 	  findi = 0;
 	  iid = id;
 	}
       }
-    }    
+    }
 
     if(findi == 0) {
       ielement = element[iid];
       element[iid] = INT;
       dmb1[iid] = velement;
       dmb2[iid] = ielement;
-      nsites_local[ielement] --; // site element number -1 
+      siatype[iid] = static_cast<int>(ranseg->uniform()*3);
+      nsites_local[ielement] --; // site element number -1
       nsites_local[INT] ++;
-      update_propensity(iid); 
+      update_propensity(iid);
     }
   }
 
-  //check if any reactions need to be activated or deactivated 
+  //check if any reactions need to be activated or deactivated
   if(reaction_flag == 1) {
     for(int ii = 0; ii < nreaction; ii ++) {
-      if(target_local[ii] == VAC || target_local[ii] == INT) target_local[ii] --; 
-      if(target_local[ii] == velement || target_local[ii] == ielement) target_local[ii] ++; 
+      if(target_local[ii] == VAC || target_local[ii] == INT) target_local[ii] --;
+      if(target_local[ii] == velement || target_local[ii] == ielement) target_local[ii] ++;
 
       if(target_local[ii] <= 0 && renable[ii] == 1) {
         renable[ii] = 0;
@@ -1555,15 +1788,15 @@ void AppSeg::frenkelpair()
     }
   }
 
-  // no self_ions need to be added 
+  // no self_ions need to be added
   if(ranseg->uniform() >= self_ion_ratio) return;
 
   // add self-ion
-  int findion = 1; 
+  int findion = 1;
   int ionelement = -1;
-  while (findion) { 
+  while (findion) {
     id = static_cast<int> (nlocal*ranseg->uniform());
-  
+
     if(id < nlocal && element[id] > INT) {
       nself_ion ++;
       findion = 0;
@@ -1571,17 +1804,18 @@ void AppSeg::frenkelpair()
       element[id] = INT;
       dmb1[id] = self_ion_type;
       dmb2[id] = ionelement;
-      nsites_local[ionelement] --; // site element number -1 
+      siatype[id] = static_cast<int>(ranseg->uniform()*3);
+      nsites_local[ionelement] --; // site element number -1
       nsites_local[INT] ++;
-      update_propensity(id); 
+      update_propensity(id);
     }
-  } 
+  }
 
-  //check if any reactions need to be activated or deactivated 
+  //check if any reactions need to be activated or deactivated
   if(reaction_flag == 1) {
     for(int ii = 0; ii < nreaction; ii ++) {
-      if(target_local[ii] == INT) target_local[ii] --; 
-      if(target_local[ii] == ionelement) target_local[ii] ++; 
+      if(target_local[ii] == INT) target_local[ii] --;
+      if(target_local[ii] == ionelement) target_local[ii] ++;
 
       if(target_local[ii] <= 0 && renable[ii] == 1) {
         renable[ii] = 0;
@@ -1598,7 +1832,7 @@ void AppSeg::frenkelpair()
 }
 
 /* ----------------------------------------------------------------------
-   check if a mixing event if needed 
+   check if a mixing event if needed
 ------------------------------------------------------------------------- */
 void AppSeg::check_ballistic(double t)
 {
@@ -1617,54 +1851,54 @@ void AppSeg::check_ballistic(double t)
 }
 
 /* ----------------------------------------------------------------------
-  perform ballistic mixing. randomly mixing two atoms (no v, sia mixing)  
+  perform ballistic mixing. randomly mixing two atoms (no v, sia mixing)
 ------------------------------------------------------------------------- */
 
 void AppSeg::ballistic(int i)
-{ 
+{
   int id,itype,iid,jid;
 
-  // find atom i 
+  // find atom i
   int allsites = 0;
-  for(int j=CE1; j<nelement; j++) allsites += nsites_local[j]; 
+  for(int j=CE1; j<nelement; j++) allsites += nsites_local[j];
   if(allsites == 0) error->all(FLERR, "No matrix sites available for mixing!");
-  
+
   int findi = 1;
-  while (findi) { 
+  while (findi) {
     id = static_cast<int> (nlocal*ranseg->uniform());
     if(id < nlocal && element[id] > INT) {
-      iid = id; 
+      iid = id;
       findi = 0;
     }
   }
-  
-  //find an element for mix  
-  int findj = 1; 
-  while (findj) { 
+
+  //find an element for mix
+  int findj = 1;
+  while (findj) {
     id = static_cast<int> (nlocal*ranseg->uniform());
     if(id < nlocal && element[id] > INT) {
         double dij = distanceIJ(iid,id);
 	double mixprobability = exp(-dij/bdistance);
-        if(ranseg->uniform() <= mixprobability) { 
+        if(ranseg->uniform() <= mixprobability) {
 	  findj = 0;
 	  jid = id;
-	} 
-    }    
+	}
+    }
   }
 
-  //switch iid and jid and update the propensity  
+  //switch iid and jid and update the propensity
   itype = element[iid];
   element[iid] = element[jid];
   element[jid] = itype;
-  /* currently no sia mixing  
+  /* currently no sia mixing
   int idmb1 = dmb1[iid];
   int idmb2 = dmb2[iid];
 
   dmb1[iid] = dmb1[jid];
   dmb2[iid] = dmb2[jid];
 
-  dmb1[jid] = idmb1; 
-  dmb2[jid] = idmb2; 
+  dmb1[jid] = idmb1;
+  dmb2[jid] = idmb2;
   */
   update_propensity(iid);
   update_propensity(jid);
@@ -1672,13 +1906,13 @@ void AppSeg::ballistic(int i)
   return;
 }
 /* ----------------------------------------------------------------------
-   check if any sink motion needs to be performed  
+   check if any sink motion needs to be performed
 ------------------------------------------------------------------------- */
 void AppSeg::check_sinkmotion(double t)
 {
   int nmove = 0;
   for(int i = 1; i < nsink+1; i ++) {
-     if(sink_dr[i] < 0.0) continue; // skip static sinks 
+     if(sink_dr[i] < 0.0) continue; // skip static sinks
      sink_dt_new[i] = static_cast<int>(t/sink_dt[i]);
      nmove = sink_dt_new[i] - sink_dt_old[i];
      while (nmove > 0) {  //perform mixing nmix times
@@ -1693,31 +1927,31 @@ void AppSeg::check_sinkmotion(double t)
 
 /* ----------------------------------------------------------------------
    move sink n in the direction of sink_dr[n] with an amount of a0/2
-   This is done by delete sink n and recreate it with the center displaced by a0/2     
+   This is done by delete sink n and recreate it with the center displaced by a0/2
 ------------------------------------------------------------------------- */
 void AppSeg::sink_motion(int n)
 {
   int nlattice = nlocal + nghost;
-  double dr=sink_dr[n]; 
-  if(dr == 0.0) xsink[n][0] = xsink[n][0] + 0.5;  
-  if(dr == 1.0) xsink[n][1] = xsink[n][1] + 0.5;  
-  if(dr == 2.0) xsink[n][2] = xsink[n][2] + 0.5;  
+  double dr=sink_dr[n];
+  if(dr == 0.0) xsink[n][0] = xsink[n][0] + 0.5;
+  if(dr == 1.0) xsink[n][1] = xsink[n][1] + 0.5;
+  if(dr == 2.0) xsink[n][2] = xsink[n][2] + 0.5;
 
   for (int i=0; i<nlattice; i++) {
       if(isink[i] == n) isink[i] = 0; //remove sink n
-  } 
+  }
 
   sink_creation(n); //recreate sink n
   return;
 }
 
 /* ----------------------------------------------------------------------
-   absorption of an element at site i. This is probabbly not needed.   
+   absorption of an element at site i. This is probabbly not needed.
 ------------------------------------------------------------------------- */
 void AppSeg::absorption(int i)
 {
   int j,k,m,n,ei,ejd,ntotal;
-  double ctotal,cr[10]; 
+  double ctotal,cr[10];
 
   ntotal = 0;
   ctotal = 0.0;
@@ -1725,38 +1959,38 @@ void AppSeg::absorption(int i)
   ejd = -1;
   n = isink[i];
 
-  if(ei > INT) return; // currently only absorbs VAC and INT 
-  if(eisink[ei][n] > -100) return; // not an absorbing sink 
-  if(ranseg->uniform() > 1.0/sink_mfp[ei][n]) return; // no absorption occurs 
-  
-  nabsorption[ei][n] ++; // number of element ei absorbed by type of isink[i] sink 
+  if(ei > INT) return; // currently only absorbs VAC and INT
+  if(eisink[ei][n] > -100) return; // not an absorbing sink
+  if(ranseg->uniform() > 1.0/sink_mfp[ei][n]) return; // no absorption occurs
 
-  if(ei == VAC)  { // for vacancy choose a reserved atom to occupy 
-     for(m = CE1; m < nelement ; m++) {if(nreserve[m][n] > 0) ntotal += nreserve[m][n];} // count all reserved SIAs at sinks 
-     
+  nabsorption[ei][n] ++; // number of element ei absorbed by type of isink[i] sink
+
+  if(ei == VAC)  { // for vacancy choose a reserved atom to occupy
+     for(m = CE1; m < nelement ; m++) {if(nreserve[m][n] > 0) ntotal += nreserve[m][n];} // count all reserved SIAs at sinks
+
      j = CE1;
      if(ntotal > 0) {// choose from reserved elements at sinks
        for(m = CE1; m < nelement; m++) cr[m] = 1.0*nreserve[m][n]/ntotal;
        double rand_me = ranseg->uniform();
-       
+
        while(j<nelement) {
-           if(rand_me < cr[j])  {ejd = j; break;} // break if found ejd 
-           if(nreserve[j][n] > 0) rand_me -= cr[j]; // skip negatively reserved element 
+           if(rand_me < cr[j])  {ejd = j; break;} // break if found ejd
+           if(nreserve[j][n] > 0) rand_me -= cr[j]; // skip negatively reserved element
            j++;
-	   if(j==nelement) ejd = nelement-1; 
+	   if(j==nelement) ejd = nelement-1;
        }
-     } else {// if none reserved "borrow" from reserved   
-       for(m = CE1; m < nelement; m++) ctotal += ci[m]; // count all reserved SIAs at sinks 
+     } else {// if none reserved "borrow" from reserved
+       for(m = CE1; m < nelement; m++) ctotal += ci[m]; // count all reserved SIAs at sinks
        if(ctotal <= 0.0) error->all(FLERR,"no element available to recombine with vacancy at sink");
        double rand_me = ranseg->uniform()*ctotal;
- 
+
        while(j<nelement) {
-           if(rand_me < ci[j])  {ejd = j; break;} // break if found ejd 
+           if(rand_me < ci[j])  {ejd = j; break;} // break if found ejd
            rand_me -= ci[j];
-           j++; 
-	   if(j==nelement) ejd = nelement-1; 
+           j++;
+	   if(j==nelement) ejd = nelement-1;
        }
-     }   
+     }
      if(ejd == -1) error->all(FLERR,"no element found to recombine with vacancy at sink");
 
      // recombine and recount the # of atoms and reserved atomsat sink n
@@ -1765,27 +1999,28 @@ void AppSeg::absorption(int i)
      element[i] = ejd;
      nreserve[ejd][n] --;
 
-  } else if (ei == INT) { // randomly reserve one element from a dumbbell 
-         
+  } else if (ei == INT) { // randomly reserve one element from a dumbbell
+
      nsites_local[ei] --;
-     if (ranseg->uniform() > 0.5) { //dmb1 occupies the site and dmb2 goes to reservior 
+     if (ranseg->uniform() > 0.5) { //dmb1 occupies the site and dmb2 goes to reservior
         element[i] = dmb1[i];
-        nreserve[dmb2[i]][n] ++; 
+        nreserve[dmb2[i]][n] ++;
         nsites_local[dmb1[i]] ++;
-     } else { //dmb2 occupies the site and dmb1 goes to reservior 
+     } else { //dmb2 occupies the site and dmb1 goes to reservior
         element[i] = dmb2[i];
-        nreserve[dmb1[i]][n] ++; 
+        nreserve[dmb1[i]][n] ++;
         nsites_local[dmb2[i]] ++;
      }
-     dmb1[i] = -1;     
-     dmb2[i] = -1;     
+     dmb1[i] = -1;
+     dmb2[i] = -1;
+     siatype[i] = -1;
   }
 
   // update reaction target number
   if (reaction_flag == 1) {
      for(j = 0; j < nreaction; j++) {
         if(routput[j] == ei) target_local[j] ++; // one less ei atom
-        if(routput[j] == element[i]) target_local[j] --; // one more element[i] atom 
+        if(routput[j] == element[i]) target_local[j] --; // one more element[i] atom
 
         if(target_local[j] <= 0 && renable[j] == 1) {
           renable[j] = 0;
@@ -1798,17 +2033,17 @@ void AppSeg::absorption(int i)
      }
   }
 
-  return; 
+  return;
 }
 
 /*-----------------------------------------------------------------
-recombination within 2nd NN distance, returns the id of the recombined atom with i 
+recombination within 2nd NN distance, returns the id of the recombined atom with i
 -------------------------------------------------------------------*/
-int AppSeg::recombine(int i) 
-{ 
-  int n1nn,n2nn,jd,ei,ej,m,n,sia1,sia2; 
-  
-  n1nn = numneigh[i];  
+int AppSeg::recombine(int i)
+{
+  int n1nn,n2nn,jd,ei,ej,m,n,sia1,sia2;
+
+  n1nn = numneigh[i];
   n2nn = 0;
   ei = element[i];
   if(engstyle == 2) n2nn = numneigh2[i];
@@ -1816,34 +2051,36 @@ int AppSeg::recombine(int i)
       if(n < numneigh[i])  jd = neighbor[i][n];
       if(n >= numneigh[i])  jd = neighbor2[i][n-n1nn]; // 2NN
 
-      ej = element[jd]; 
-      if(ei != VAC && ej != VAC) continue; // None vacancy 
-      if(ei != INT && ej != INT) continue; // None SIA 
-      if(ei == ej) continue; // same type  
+      ej = element[jd];
+      if(ei != VAC && ej != VAC) continue; // None vacancy
+      if(ei != INT && ej != INT) continue; // None SIA
+      if(ei == ej) continue; // same type
 
       nrecombine[ei] ++;
       nrecombine[ej] ++;
       nsites_local[ei] --;
       nsites_local[ej] --;
 
-      // extract the two dumbbell atoms 
-      if(ei == INT) { 
+      // extract the two dumbbell atoms
+      if(ei == INT) {
         sia1 = dmb1[i];
         sia2 = dmb2[i];
+	siatype[i] = -1;
       } else {
         sia1 = dmb1[jd];
         sia2 = dmb2[jd];
-      } 
+	siatype[jd] = -1;
+      }
 
-      // randomly assign the two dumbbell atoms to sites i and jd 
-      double randme = ranseg->uniform();  
-      if(randme < 0.5) { 
+      // randomly assign the two dumbbell atoms to sites i and jd
+      double randme = ranseg->uniform();
+      if(randme < 0.5) {
 	element[i] = sia1;
 	element[jd] = sia2;
       } else {
 	element[i] = sia2;
 	element[jd] = sia1;
-      } 
+      }
 
       nsites_local[element[i]] ++;
       nsites_local[element[jd]] ++;
@@ -1855,7 +2092,7 @@ int AppSeg::recombine(int i)
        if(routput[k] == element[i] || routput[k] == element[jd])  target_local[k] --;
        if(routput[k] == ei || routput[k] == ej)  target_local[k] ++;
        }
-     } 
+     }
 
      return jd;
   }
@@ -1873,18 +2110,22 @@ double AppSeg::total_energy( )
   int i,j,etype,stype;
   double penergy = 0.0;
   for(i = 0; i < nlocal; i++) penergy += sites_energy(i,engstyle);
-  //diagnose if any dumbbells are assigned to non-interstitial atoms 
-  //for(i = 0; i < nlocal; i++) {if(element[i] != INT && (dmb1[i] >= 0 || dmb2[i] >= 0)) 
+  //diagnose if any dumbbells are assigned to non-interstitial atoms
+  //for(i = 0; i < nlocal; i++) {if(element[i] != INT && (dmb1[i] >= 0 || dmb2[i] >= 0))
   //   {fprintf(screen,"wrong atoms in non-SIAs %d %d %d %d\n", i,element[i],dmb1[i],dmb2[i]);}}
 
-  if(elastic_flag) { // elastic energy 
+  for(i = 0; i < nlocal; i++) {
+     if(siatype[i] >= 0) penergy += edumbbell[dmb1[i]][dmb2[i]];
+  }
+
+  if(elastic_flag) { // elastic energy
     for(j = 0; j < nlocal; j++) {
       etype = element[j];
       penergy += elastic_energy(j,etype);
     }
   }
 
-  if(eisink_flag) { // segregation energy 
+  if(eisink_flag) { // segregation energy
     for(j = 0; j < nlocal; j++) {
       etype = element[j];
       stype = isink[j];
@@ -1896,7 +2137,7 @@ double AppSeg::total_energy( )
 }
 
 /* ----------------------------------------------------------------------
-  calculate the Onsager coefficient based on atomic displacement  
+  calculate the Onsager coefficient based on atomic displacement
 ------------------------------------------------------------------------- */
 void AppSeg::onsager(double t)
 {
@@ -1905,18 +2146,18 @@ void AppSeg::onsager(double t)
 
   if(t <= 0) return;
 
-  for (j = 0; i < 3; i++) { 
-  for (j = 0; j < nelement; j++) { 
+  for (j = 0; i < 3; i++) {
+  for (j = 0; j < nelement; j++) {
 	  total_disp[i][j] = 0.0;
   }
   }
 
   // calculate the total displacement of each element
   for (i = 0; i < nlocal; i++) {
-     total_disp[0][element[i]] += disp[0][i];      
-     total_disp[1][element[i]] += disp[1][i];      
-     total_disp[2][element[i]] += disp[2][i];      
-  } 
+     total_disp[0][element[i]] += disp[0][i];
+     total_disp[1][element[i]] += disp[1][i];
+     total_disp[2][element[i]] += disp[2][i];
+  }
 
   for (i = 0; i < nelement; i++) {
   for (j = i; j < nelement; j++) {
@@ -1930,18 +2171,18 @@ void AppSeg::onsager(double t)
 }
 
 /* ----------------------------------------------------------------------
-  calculate the short range order matrix  
+  calculate the short range order matrix
 ------------------------------------------------------------------------- */
 void AppSeg::short_range_order()
 { int i,j,jd,itype,jtype;
 
-  // initialization 
+  // initialization
   for(i=0; i<nelement; i++) {
      total_neighbor[i] = 0;
      for(j=0; j<nelement; j++) {
         sro[i][j] = 0.0;
      }
-  } 
+  }
 
   for(i=0; i<nlocal; i++) {
      itype = element[i];
@@ -1950,12 +2191,12 @@ void AppSeg::short_range_order()
         total_neighbor[itype] ++;
 	sro[itype][jtype] += 1;
      }
-  } 
+  }
 
   for(i=0; i<nelement; i++) {
      for(j=0; j<nelement; j++) {
         double jconcentration = 1.0*nsites_local[j]/nlocal;
-	if(jconcentration == 0.0) { // there is no j element 
+	if(jconcentration == 0.0) { // there is no j element
 	  sro[i][j] = 1.0;
 	} else {
           sro[i][j] /= total_neighbor[i];
@@ -1963,27 +2204,27 @@ void AppSeg::short_range_order()
           sro[i][j] = 1.0 - sro[i][j];
 	}
      }
-  } 
+  }
 
-  return; 
+  return;
 }
 
 /* ----------------------------------------------------------------------
-  Calculate time dependent ris of given element 
+  Calculate time dependent ris of given element
 ------------------------------------------------------------------------- */
 void AppSeg::ris_time()
 {
   int i,j,ncell;
-  int **icell; 
+  int **icell;
 
   ncell = static_cast<int>(lprd[2]); // bin size = 1
   icell = new int *[ncell];
   for(i = 0; i < ncell; i++) {
      icell[i] = new int[nelement];
-  } 
+  }
 
   for(i = 0; i < nelement; i++) ris_total[i] = 0.0;
-  for(i = 0; i < ncell; i++){ 
+  for(i = 0; i < ncell; i++){
   for(j = 0; j < nelement; j++) {
      icell[i][j] = 0;
   }}
@@ -1991,49 +2232,49 @@ void AppSeg::ris_time()
   for(i = 0; i < nlocal; i++) {
      int iz = static_cast<int>(xyz[i][2] - boxlo[2]);
      icell[iz][element[i]] += 1;
-  } 
+  }
 
-  int nlayer = nlocal/ncell; 
+  int nlayer = nlocal/ncell;
   for(j = 0; j < nelement; j++) {
-     if(ris_ci[j] == 0.0) continue; // do not calcualte for those not monitored 
+     if(ris_ci[j] == 0.0) continue; // do not calcualte for those not monitored
      for(i = 0; i < ncell; i++) {
         double dcij = 1.0*icell[i][j]/nlayer - ris_ci[j]; // deviation from nominal concentration
-        ris_total[j] += fabs(dcij)/2.0; // count both enrichment and depletion and the divide the sum by 2 
+        ris_total[j] += fabs(dcij)/2.0; // count both enrichment and depletion and the divide the sum by 2
      }
-  }  
+  }
 
   for(i = 0; i < ncell; i++) {
-     delete [] icell[i]; 
-  } 
+     delete [] icell[i];
+  }
   delete [] icell;
 
   return;
 }
 
 /* ----------------------------------------------------------------------
-  Integrate c*t at each site for fractional occupancy over time 
+  Integrate c*t at each site for fractional occupancy over time
 ------------------------------------------------------------------------- */
 void AppSeg::concentration_field(double dt)
 {
-  dt_new += dt; // update time interval 
+  dt_new += dt; // update time interval
   for(int i = 0; i < nlocal; i++) {
-     ct_new[element[i]] += dt; 
-     //ct_site[i][element[i]] += dt;     
-  } 
+     ct_new[element[i]] += dt;
+     //ct_site[i][element[i]] += dt;
+  }
 
   return;
 }
 
 /* ----------------------------------------------------------------------
-  update time averaged concentrations 
+  update time averaged concentrations
 ------------------------------------------------------------------------- */
 void AppSeg::time_averaged_concentration()
 {
-  for(int i = 0; i < nelement; i++) { // ct = c*t / dt 
-     if(dt_new > 0.0) ct[i] = ct_new[i]/dt_new/nlocal; 
+  for(int i = 0; i < nelement; i++) { // ct = c*t / dt
+     if(dt_new > 0.0) ct[i] = ct_new[i]/dt_new/nlocal;
      ct_new[i] = 0.0;
   }
-  dt_new = 0.0;   
+  dt_new = 0.0;
 }
 
 /* ----------------------------------------------------------------------
@@ -3296,7 +3537,7 @@ void AppSeg::trapozidal(double omegas[100], double XP[9][100], int j, int k, dou
 }
 
 /* ----------------------------------------------------------------------
-   calculate the distance between i and j in vector form. 
+   calculate the distance between i and j in vector form.
 ------------------------------------------------------------------------- */
 double AppSeg::distanceIJ(int i, int j)
 {
@@ -3311,13 +3552,13 @@ double AppSeg::distanceIJ(int i, int j)
    lprd[1] = domain->yprd;
    lprd[2] = domain->zprd;
 
-   dij[3] = 0.0; 
+   dij[3] = 0.0;
    for (int k = 0; k < 3; k++) { //update
        dij[k] = xyz[j][k] - xyz[i][k];
        if (periodicity[k] && dij[k] >= lprd[k]/2.0) dij[k] -= lprd[k];
        if (periodicity[k] && dij[k] <= -lprd[k]/2.0) dij[k] += lprd[k];
        dij[3] += dij[k]*dij[k];
-   } 
+   }
 
    return sqrt(dij[3]); //square root of distance
 }

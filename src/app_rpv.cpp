@@ -34,7 +34,7 @@ enum{ZERO,FE,VACANCY,CU,NI,MN,Si,P,C,SIA};       // same as DiagRpv; element
 
 #define DELTAEVENT 100000
 #define MAX2NN 6 // max 2NN of BCC lattice
-#define BIGNUMBER 1e18 // define a big number 
+#define BIGNUMBER 1e18 // define a big number
 
 /* ---------------------------------------------------------------------- */
 
@@ -441,7 +441,7 @@ void AppRpv::define_2NN()
     }
 
     for (j = 0; j < ncandidate; j++) {
-      if(frequency[j] < 0) continue; // jd already observed earlier 
+      if(frequency[j] < 0) continue; // jd already observed earlier
       jd = candidate[j];
       frequency[j]++;
       for (k = j+1; k < ncandidate; k++) {
@@ -651,15 +651,15 @@ double AppRpv::site_SP_energy(int i, int j, int estyle)
   eng0i = sites_energy(i,estyle); //broken bond with i initially,
   eng0j = sites_energy(j,estyle); //broken bond with j initially
 
-  // switch the element and recalculate the site energy 
+  // switch the element and recalculate the site energy
   element[i] = jele;
-  element[j] = iele; 
+  element[j] = iele;
   eng1i = sites_energy(i,estyle); //broken bond with i initially,
   eng1j = sites_energy(j,estyle); //broken bond with j initially
 
-  // switch back 
-  element[j] = jele; 
-  element[i] = iele; 
+  // switch back
+  element[j] = jele;
+  element[i] = iele;
 
   //barrier = migbarrier + (eng_after - eng_before)/2.0;
   eng = mbarrier[element[j]] + (eng1i + eng1j - eng0i -eng0j);
@@ -1200,7 +1200,7 @@ void AppRpv::check_ballistic(double t)
 }
 
 /* ----------------------------------------------------------------------
-  perform ballistic mixing 
+  perform ballistic mixing
 ------------------------------------------------------------------------- */
 
 void AppRpv::ballistic(int n)

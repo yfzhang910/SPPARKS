@@ -34,14 +34,14 @@ enum{ZERO,FE,VACANCY,SB,HE,VO,I1,I2,I3,I4,I5,I6};       // same as DiagBCCOCTA; 
 
 #define DELTAEVENT 100000
 #define MAX2NN 18  // max 2NN of BCC lattice
-#define BIGNUMBER 1e18 // define a big number 
+#define BIGNUMBER 1e18 // define a big number
 
 /* ---------------------------------------------------------------------- */
 
 AppBccOcta::AppBccOcta(SPPARKS *spk, int narg, char **arg) :
   AppLattice(spk,narg,arg)
 {
-  ninteger = 3; // first for lattice type; second for element; third for cluster analysis  
+  ninteger = 3; // first for lattice type; second for element; third for cluster analysis
   ndouble = 0;
   delpropensity = 2;
   delevent = 1;
@@ -49,26 +49,26 @@ AppBccOcta::AppBccOcta(SPPARKS *spk, int narg, char **arg) :
   allow_rejection = 0;
 
   engstyle = 1; //1 for 1NN interaction, 2 for 2NN interaction; default 1
-  rhop = 1; // default only 1NN hop 
+  rhop = 1; // default only 1NN hop
   rrecombine = 1; // recombination radius, default 1
-  cflag = clst_flag = 0; // if activate concentration dependent VV bond, default 0 (no); 
+  cflag = clst_flag = 0; // if activate concentration dependent VV bond, default 0 (no);
   if (narg < 1) error->all(FLERR,"Illegal app_style command");
   if (narg >= 2) engstyle = atoi(arg[1]);
   if (narg >= 3) rhop = atoi(arg[2]);
   if (narg >= 4) rrecombine = atoi(arg[3]);
-  if (rrecombine == 4) { 
+  if (rrecombine == 4) {
      if (narg < 5) error->all(FLERR,"Recombination radius is required but not supplied");
      rrec = atof(arg[4]);
      if (narg >= 6) cflag = atoi(arg[5]);
   } else if (narg >= 5) cflag = atoi(arg[4]);
   if (engstyle == 2) delpropensity += 1;// increase delpropensity for 2NN interaction
-  if (rhop == 3) delpropensity +=1; 
+  if (rhop == 3) delpropensity +=1;
 
-  //ninteger ++; // for recombination vector or cluster analysis, test only  
+  //ninteger ++; // for recombination vector or cluster analysis, test only
   create_arrays();
 
   dmigration = 3;
-  dratio = 1.0; 
+  dratio = 1.0;
   firsttime = 1;
   esites = NULL;
   echeck = NULL;
@@ -103,7 +103,7 @@ AppBccOcta::AppBccOcta(SPPARKS *spk, int narg, char **arg) :
   rbarrier = rrate = NULL;
 
   // arrays for ballistic mixing
-  bfreq = NULL; 
+  bfreq = NULL;
   time_old = time_new = NULL;
   min_bfreq = BIGNUMBER;
 
@@ -112,12 +112,12 @@ AppBccOcta::AppBccOcta(SPPARKS *spk, int narg, char **arg) :
   numneigh2 = numneigh3 = numneigh4 = NULL;
   neighbor2 = neighbor3 = neighbor4 = NULL;
 
-  // cluster analysis 
+  // cluster analysis
   ncelem = cid = csize = NULL;
 
-  // He occupation of a vacancy 
+  // He occupation of a vacancy
   iHe=NULL;
-  // default no preexisting voids 
+  // default no preexisting voids
   nvoid=0;
 }
 
@@ -182,7 +182,7 @@ AppBccOcta::~AppBccOcta()
     memory->destroy(target_global);
   }
 
-  if (mfpflag) {// mean free path for absorption  
+  if (mfpflag) {// mean free path for absorption
     memory->destroy(rhmfp);
     memory->destroy(nhmfp);
     memory->destroy(mfp);
@@ -199,7 +199,7 @@ void AppBccOcta::input_app(char *command, int narg, char **arg)
   int i,j,ibond;
   int nlattice = nlocal + nghost;
 
-  // initial coordiation of each atom, for recombination vector analysis, test only 
+  // initial coordiation of each atom, for recombination vector analysis, test only
   //memory->create(xyz0,nlocal,3,"app/bccocta:xyz0");
   memory->create(iHe,nlocal,"app/bccocta:iHe");
 
@@ -308,17 +308,17 @@ void AppBccOcta::input_app(char *command, int narg, char **arg)
     ballistic_flag = 1;
     grow_ballistic();
 
-    double dose_rate=atof(arg[0]);// dose rate 
-    bfreq[nballistic] = 1e12/nlocal/dose_rate; // time interval to introduce an FP 
+    double dose_rate=atof(arg[0]);// dose rate
+    bfreq[nballistic] = 1e12/nlocal/dose_rate; // time interval to introduce an FP
     if(min_bfreq > bfreq[nballistic]) min_bfreq = bfreq[nballistic];
-    gas_rate = atof(arg[1]); // gas/V ratio 
+    gas_rate = atof(arg[1]); // gas/V ratio
     nballistic ++; // number of mixing events
   }
 
   else if (strcmp(command, "migration_vector") ==0) {
     if(nelement < 3 || narg != (nelement-I1+1)*3 + 2) error->all(FLERR,"illegal migration vector command");
-    dmigration = atoi(arg[0]); // dimension of migration, default 3D  
-    dratio = atof(arg[1]); // ratio of anisotropic diffusion   
+    dmigration = atoi(arg[0]); // dimension of migration, default 3D
+    dratio = atof(arg[1]); // ratio of anisotropic diffusion
     j = I1-1;
     for (i=0; i<narg-2; i++) {
       int k = i % 3;
@@ -331,7 +331,7 @@ void AppBccOcta::input_app(char *command, int narg, char **arg)
     }
   }
 
-  // meam hop steps before absorption by external sink 
+  // meam hop steps before absorption by external sink
   else if (strcmp(command, "mfp") ==0) {
 
     if (narg < 2 || narg % 2 == 0) error->all(FLERR,"Illegal mfp command");
@@ -341,31 +341,31 @@ void AppBccOcta::input_app(char *command, int narg, char **arg)
     memory->create(nhmfp,nelement+1,"app/bccocta:nhmfp");
     memory->create(rhmfp,nelement+1,"app/bccocta:rhmfp");
 
-    for (i=0; i<=nelement; i++) mfp[i] = -1.0; 
+    for (i=0; i<=nelement; i++) mfp[i] = -1.0;
 
-    sigmamfp = atof(arg[0]); 
+    sigmamfp = atof(arg[0]);
     for (i=1; i<narg-1; i++) {
       if(i % 2 == 1) { j = atoi(arg[i]);
         mfp[j] = atof(arg[i+1]);
       }
     }
   }
-  // meam hop steps before absorption by external sink 
+  // meam hop steps before absorption by external sink
   else if (strcmp(command, "cluster") ==0) {
 
     if (narg < 2) error->all(FLERR,"Illegal mfp command");
-    
+
     clst_flag = 1;
     nctype = atoi(arg[0]);
     ncsize = atoi(arg[1]);;
     memory->create(ncelem,nctype,"app/bccocta:ncelem");
     for (i=0; i<nctype; i++) ncelem[i] = atoi(arg[i+2]);
   }
-  // add preexisting voidsk 
+  // add preexisting voidsk
   else if (strcmp(command, "void") ==0) {
 
     if (narg < 4) error->all(FLERR,"Illegal void command");
-    
+
     voidradius[nvoid] = atof(arg[0]);
     voidcenter[nvoid][0] = atof(arg[1]);
     voidcenter[nvoid][1] = atof(arg[2]);
@@ -380,7 +380,7 @@ void AppBccOcta::input_app(char *command, int narg, char **arg)
 
 /* ----------------------------------------------------------------------
    set site value ptrs each time iarray/darray are reallocated
-   This is before set commands are executed.  
+   This is before set commands are executed.
 ------------------------------------------------------------------------- */
 
 void AppBccOcta::grow_app()
@@ -390,8 +390,8 @@ void AppBccOcta::grow_app()
   element = iarray[1];  // element type; i2 in input
   for (int i = 0; i < nlocal; i++) {
       if(numneigh[i] == 32) type[i] = BCC;
-      if(numneigh[i] == 18) type[i] = OCTA; // include 2NN OCTA and BCC 
-  } 
+      if(numneigh[i] == 18) type[i] = OCTA; // include 2NN OCTA and BCC
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -418,11 +418,11 @@ void AppBccOcta::init_app()
 
   int flag = 0;
   for (i = 0; i < nelement; i++) nsites_local[i] = 0;
-  // setup neighbor list for large recombination redius 
-  // recombine V and I if created on 1NN sites 
+  // setup neighbor list for large recombination redius
+  // recombine V and I if created on 1NN sites
   if(rrecombine == 4) recombine_list(rrec);
   for (i = 0; i < nelement; i++) nrecombine[i] = 0;
-  for (i = 0; i < nlocal; i++) {iHe[i] = 0; recombine(i);} 
+  for (i = 0; i < nlocal; i++) {iHe[i] = 0; recombine(i);}
 
   // site validity
   for (i = 0; i < nlocal; i++) {
@@ -456,7 +456,7 @@ void AppBccOcta::init_app()
     }
   }
 
-  // initialize mfp calculations 
+  // initialize mfp calculations
   if(mfpflag) {
     for (i = 0; i < nlocal+nghost; i++) hcount[i] = 0;
     for (i = 0; i <= nelement; i++) {
@@ -464,47 +464,47 @@ void AppBccOcta::init_app()
         nhmfp[i] = 0;
     }
 
-    varmfp = 2.0*sigmamfp; //sqrt(2*pi)*sigma 
+    varmfp = 2.0*sigmamfp; //sqrt(2*pi)*sigma
     sigmamfp *= sigmamfp;
-    sigmamfp *= 2.0; //2*sigma^2   
+    sigmamfp *= 2.0; //2*sigma^2
   }
 
-  // create pre-existing voids 
+  // create pre-existing voids
   if(nvoid > 0) prevoid();
 
-  nvhop = 0; 
+  nvhop = 0;
 }
 
 /* ---------------------------------------------------------------------- */
 /* --------------------------- add two pre-existing voids  -------------- */
 
 void AppBccOcta::prevoid()
-{ 
+{
   int i,j,k;
   //int nvoid = 2;
   //double voidcenter[2][3];
-  //double voidradius = 5.0; 
+  //double voidradius = 5.0;
   double xlo[3],lprd[3],dij[4];
 
-  // domain size and boundaries 
+  // domain size and boundaries
   lprd[0] = domain->xprd;
   lprd[1] = domain->yprd;
   lprd[2] = domain->zprd;
-  
+
   xlo[0] = domain->boxxlo;
   xlo[1] = domain->boxylo;
   xlo[2] = domain->boxzlo;
-  
-  // void size 
+
+  // void size
   //voidcenter[0][0] = voidcenter[0][1] = voidcenter[0][2] = 0.0;
-  //voidcenter[1][0] = xlo[0]; 
-  //voidcenter[1][1] = xlo[1]; 
-  //voidcenter[1][2] = xlo[2]; 
+  //voidcenter[1][0] = xlo[0];
+  //voidcenter[1][1] = xlo[1];
+  //voidcenter[1][2] = xlo[2];
 
   for(i = 0; i < nvoid; i++) {
      voidradius[i] *= voidradius[i];
      for(j = 0; j < nlocal; j++) {
-	if(type[j] == 2) continue; 
+	if(type[j] == 2) continue;
         for(k = 0; k < 3; k++) {
            dij[k] = xyz[j][k] - voidcenter[i][k];
 	   if(dij[k] > lprd[k]/2.0) dij[k] -= lprd[k];
@@ -519,13 +519,13 @@ void AppBccOcta::prevoid()
   }
 
   return;
-}      
+}
 /* ---------------------------------------------------------------------- */
 /* ---------------------------initiation of looing-up list -------------- */
 
 void AppBccOcta::setup_app()
 {
-      
+
   for (int i = 0; i < nlocal; i++) echeck[i] = 0;
 
   // clear event list
@@ -546,14 +546,14 @@ void AppBccOcta::setup_app()
 }
 
 /* ----------------------------------------------------------------------
-   separate the total neighbors into 1NN and 2NN. For bcc sites, there are 
-   8 bcc and 6 octa 1NNs, and 6 bcc and 12 octa 2NNs. For octa sites, there 
-   are 2 bcc and 4 octa 1NNs, and 4 bcc and 8 octa 2NNs. All are defined as 
-   1NN in create_site.cpp     
+   separate the total neighbors into 1NN and 2NN. For bcc sites, there are
+   8 bcc and 6 octa 1NNs, and 6 bcc and 12 octa 2NNs. For octa sites, there
+   are 2 bcc and 4 octa 1NNs, and 4 bcc and 8 octa 2NNs. All are defined as
+   1NN in create_site.cpp
 ------------------------------------------------------------------------- */
 
 void AppBccOcta::define_2NN()
-{ 
+{
   int i,j,jd,n1nn,n2nn;
   double rij[4],cutoff,cutoff1nn[2][2];
 
@@ -561,11 +561,11 @@ void AppBccOcta::define_2NN()
   memory->create(neighbor2,nlocal,MAX2NN,"app/bccocta, neighbor2");
 
   double epsln = 0.001;
-  cutoff1nn[0][0] = 3.0/4.0; // squared, rij*rij; needs to be multiplied lattice parameter square if other than 1.0  
-  cutoff1nn[0][1] = 0.25;   
-  cutoff1nn[1][0] = 0.25;   
+  cutoff1nn[0][0] = 3.0/4.0; // squared, rij*rij; needs to be multiplied lattice parameter square if other than 1.0
+  cutoff1nn[0][1] = 0.25;
+  cutoff1nn[1][0] = 0.25;
   cutoff1nn[1][1] = 0.25;
-   
+
   for (i = 0; i < nlocal; i++) {
       numneigh2[i] = 0;
       n1nn = n2nn = 0;
@@ -573,7 +573,7 @@ void AppBccOcta::define_2NN()
       for (j = 0; j < numneigh[i]; j++) {
           jd = neighbor[i][j];
           distanceIJ(i,jd, rij);
-          
+
           if (type[i] == 1 && type[jd] == 1) cutoff = cutoff1nn[0][0];
           else if (type[i] == 1 && type[jd] == 2) cutoff = cutoff1nn[0][1];
           else if (type[i] == 2 && type[jd] == 1) cutoff = cutoff1nn[1][0];
@@ -581,14 +581,14 @@ void AppBccOcta::define_2NN()
           else error->all(FLERR,"Lattice type defined incorrectly!");
 
           rij[3] = rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2];
-          if (rij[3] < cutoff + epsln) { 
-             neighbor[i][n1nn] = jd; 
+          if (rij[3] < cutoff + epsln) {
+             neighbor[i][n1nn] = jd;
              n1nn ++;
           } else {
-             neighbor2[i][n2nn] = jd; 
+             neighbor2[i][n2nn] = jd;
              n2nn ++;
-          } 
-      } 
+          }
+      }
 
       numneigh[i] = n1nn;
       numneigh2[i] = n2nn;
@@ -598,27 +598,27 @@ void AppBccOcta::define_2NN()
 
 /* ----------------------------------------------------------------------
    setup neighbor list for large recombination radius
-   currently for serial runs only  
+   currently for serial runs only
 ------------------------------------------------------------------------- */
 
 void AppBccOcta::recombine_list(double rrec)
 {
-  int i,j,id; 
-  int ****ibox; 
+  int i,j,id;
+  int ****ibox;
   int ncell[3];
   int index[3],cell[3];
   double rij[4],lprd[3],xlo[3],rcell[3];
 
   int max4nn = 0;
   rrec *= rrec;
-  // calculate # of neighbors within rrec using site 0  
+  // calculate # of neighbors within rrec using site 0
   for(i = 0; i < nlocal; i++) {
      distanceIJ(i,0,rij);
      rij[3] = rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2];
      if(rij[3] > rrec) continue;
      max4nn ++;
-  }   
- 
+  }
+
   memory->create(numneigh4,nlocal,"app/bccocta, numneigh4");
   memory->create(neighbor4,nlocal,max4nn,"app/bccocta, neighbor4");
 
@@ -634,8 +634,8 @@ void AppBccOcta::recombine_list(double rrec)
   for(j = 0; j < 3; j++) {
      ncell[j] = static_cast<int> (lprd[j] / sqrt(rrec));
      rcell[j] = lprd[j]/ncell[j];
-  }  
-  
+  }
+
   xlo[0] = domain->boxxlo;
   xlo[1] = domain->boxylo;
   xlo[2] = domain->boxzlo;
@@ -646,39 +646,39 @@ void AppBccOcta::recombine_list(double rrec)
      ibox[index[0]][index[1]][index[2]][0] ++;
      int k = ibox[index[0]][index[1]][index[2]][0];
      ibox[index[0]][index[1]][index[2]][k] = i;
-  } 
+  }
 
   for(i = 0; i < nlocal; i++) {
      for(j = 0; j < 3; j++) index[j] = static_cast<int>(xyz[i][j] - xlo[j]) / rcell[j];
-     
-     for(int m = -1; m < 2; m++){  
-     for(int n = -1; n < 2; n++){  
-     for(int l = -1; l < 2; l++){ 
+
+     for(int m = -1; m < 2; m++){
+     for(int n = -1; n < 2; n++){
+     for(int l = -1; l < 2; l++){
         cell[0] = index[0] + m;
         cell[1] = index[1] + n;
         cell[2] = index[2] + l;
-  
+
         for(j = 0; j < 3; j++) {
-           if(cell[j] < 0) cell[j] = ncell[j]-1; 
-           if(cell[j] > ncell[j]-1) cell[j] = 0; 
+           if(cell[j] < 0) cell[j] = ncell[j]-1;
+           if(cell[j] > ncell[j]-1) cell[j] = 0;
         }
 
         for(j = 1; j <= ibox[cell[0]][cell[1]][cell[2]][0]; j ++){
            id = ibox[cell[0]][cell[1]][cell[2]][j];
            distanceIJ(i,id,rij);
            rij[3] = rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2];
-           if(rij[3] > rrec) continue; 
-           neighbor4[i][numneigh4[i]] = id; 
+           if(rij[3] > rrec) continue;
+           neighbor4[i][numneigh4[i]] = id;
            numneigh4[i] ++;
-        } 
+        }
      }
      }
      }
   }
 
-  memory->destroy(ibox); 
+  memory->destroy(ibox);
   fprintf(screen,"End setup recombination list \n");
-}  
+}
 
 /* ----------------------------------------------------------------------
    define virtual function site_energy(int)
@@ -705,11 +705,11 @@ double AppBccOcta::sites_energy(int i, int estyle)
   for (j = 0; j < n1nn; j++) {
     jd = neighbor[i][j];
     if(cflag && element[i] == element[jd] && element[i] == VACANCY) {
-      if(ci == 0.0) ci = site_concentration(i,1); 
+      if(ci == 0.0) ci = site_concentration(i,1);
       cj = site_concentration(jd,1);
 
-      eng += ci*cj*ebond1[element[i]][element[jd]]; 
-    } else 
+      eng += ci*cj*ebond1[element[i]][element[jd]];
+    } else
     eng += ebond1[element[i]][element[jd]];
   }
 
@@ -733,18 +733,18 @@ double AppBccOcta::sites_energy(int i, int estyle)
 }
 
 /* ----------------------------------------------------------------------
-  compute local concentration to adjust V-V bond energy  
+  compute local concentration to adjust V-V bond energy
 ------------------------------------------------------------------------- */
 
 double AppBccOcta::site_concentration(int i, int estyle)
-{ 
+{
   double ci = 0.0;
- 
+
   if(estyle == 1) {
     int n1nn = numneigh[i];  //num of 1NN
     for(int j = 0; j < n1nn; j++) {
        int jd = neighbor[i][j];
-       if(element[jd]!=VACANCY) ci += 1.0/(n1nn-1); 
+       if(element[jd]!=VACANCY) ci += 1.0/(n1nn-1);
     }
     return ci;
   }
@@ -773,13 +773,13 @@ double AppBccOcta::site_SP_energy(int i, int j, int estyle)
   int iele = element[i];
   int jele = element[j];
 
-  // no excahange of same type of elements   
+  // no excahange of same type of elements
   if(iele == jele) return -1.0;
- 
-  //SIA diffusion on bcc lattice only  
+
+  //SIA diffusion on bcc lattice only
   if(iele >= I1) {
-    if(type[j] == OCTA) return -1.0; // SIA does not move to octahedral sublattice 
-    if(jele >= I1) return -1.0; // No SIA-SIA exchange 
+    if(type[j] == OCTA) return -1.0; // SIA does not move to octahedral sublattice
+    if(jele >= I1) return -1.0; // No SIA-SIA exchange
     double ran1 = ranbccocta->uniform();
     if(dmigration < 3 && ran1 < dratio) { // ratio of 1D/3D diffusion
       double dij[4];
@@ -791,61 +791,61 @@ double AppBccOcta::site_SP_energy(int i, int j, int estyle)
       if (dmigration == 2 && prdt*prdt/dij[3]/Vmig[iele][3] > 0.01) return -1.0; // 2D diffusion
     }
     return mbarrier[iele];
-  } 
+  }
 
-  //vacancy and SB diffusion on bcc lattice only 
-  if(iele == VACANCY || iele == SB) { 
-    if(type[j] == OCTA) return -1.0; // no SB dissociation currently (except when a recombination occurs), to be improved later  
-    if(iele == SB and jele == VACANCY) return -1.0; // avoid double counting of SB and vacancy exchange    
+  //vacancy and SB diffusion on bcc lattice only
+  if(iele == VACANCY || iele == SB) {
+    if(type[j] == OCTA) return -1.0; // no SB dissociation currently (except when a recombination occurs), to be improved later
+    if(iele == SB and jele == VACANCY) return -1.0; // avoid double counting of SB and vacancy exchange
 
-    // Chenge in bonding energy due to vavancy move  
+    // Chenge in bonding energy due to vavancy move
     eng0i = sites_energy(i,estyle); //broken bond with i initially,
     eng0j = sites_energy(j,estyle); //broken bond with j initially
 
-    // switch the element and recalculate the site energy 
+    // switch the element and recalculate the site energy
     element[i] = jele;
-    element[j] = iele; 
+    element[j] = iele;
     eng1i = sites_energy(i,estyle); //broken bond with i initially,
     eng1j = sites_energy(j,estyle); //broken bond with j initially
 
-    // switch back 
-    element[j] = jele; 
-    element[i] = iele; 
+    // switch back
+    element[j] = jele;
+    element[i] = iele;
 
     eng = mbarrier[iele] + (eng1i + eng1j - eng0i -eng0j);
     if(eng < 0.0) eng = 0.0; // zero barrier event
     return eng;
-  } 
+  }
 
-  //He diffuses on both lattices 
+  //He diffuses on both lattices
   if(iele == HE) {
-    // switch with an VO 
+    // switch with an VO
     eng0i = sites_energy(i,estyle); //broken bond with i initially,
     eng0j = sites_energy(j,estyle); //broken bond with j initially
 
-    if(jele == VO) {// He move on the octahedral sublattice  
+    if(jele == VO) {// He move on the octahedral sublattice
       element[i] = jele;
       element[j] = iele;
-    } else if (jele == VACANCY) {// He going to a vacancy creates a VO and an SB  
+    } else if (jele == VACANCY) {// He going to a vacancy creates a VO and an SB
       element[i] = VO;
-      element[j] = SB; 
-    } else {// No other He moves allowed 
+      element[j] = SB;
+    } else {// No other He moves allowed
       return -1.0;
     }
- 
+
     eng1i = sites_energy(i,estyle); //broken bond with i initially,
     eng1j = sites_energy(j,estyle); //broken bond with j initially
 
-    // switch back 
-    element[j] = jele; 
-    element[i] = iele; 
+    // switch back
+    element[j] = jele;
+    element[i] = iele;
 
     eng = mbarrier[iele] + (eng1i + eng1j - eng0i -eng0j);
     if(eng < 0.0) eng = 0.0; // zero barrier event
     return eng;
-  } 
+  }
 
-  return -1.0; 
+  return -1.0;
 }
 
 /* ----------------------------------------------------------------------
@@ -889,7 +889,7 @@ double AppBccOcta::site_propensity(int i)
   // propensity calculated in site_SP_energy();
   if (element[i] != VACANCY && element[i] != SB && element[i] != HE  && element[i] < I1) return prob_reaction;
 
-  // for hop events, vacancy and SIA only 
+  // for hop events, vacancy and SIA only
   // propensity calculated in site_SP_energy();
   for (j = 0; j < numneigh[i]; j++) {
       jid = neighbor[i][j];
@@ -902,7 +902,7 @@ double AppBccOcta::site_propensity(int i)
 
   if (rhop < 2) return prob_hop + prob_reaction;
 
-  // 2NN hop for <100> 1D SIA diffusion in bcc 
+  // 2NN hop for <100> 1D SIA diffusion in bcc
   for (j = 0; j < numneigh2[i]; j++) {
       jid = neighbor2[i][j];
       ebarrier = site_SP_energy(i,jid,engstyle); // diffusion barrier
@@ -914,7 +914,7 @@ double AppBccOcta::site_propensity(int i)
 
   if (rhop < 3) return prob_hop + prob_reaction;
 
-  // 3NN hop for <110> 1D SIA diffusion in bcc, not used here, to be updated later  
+  // 3NN hop for <110> 1D SIA diffusion in bcc, not used here, to be updated later
   for (j = 0; j < numneigh3[i]; j++) {
       jid = neighbor3[i][j];
       ebarrier = site_SP_energy(i,jid,engstyle); // diffusion barrier
@@ -957,28 +957,28 @@ void AppBccOcta::site_event(int i, class RandomPark *random)
   j = events[ievent].jpartner;
 
   // switch element between site i and jpartner for hop diffusion
-  if(rstyle == 1) { 
+  if(rstyle == 1) {
     k = element[i];
     jd = element[j];
     if(k == VACANCY) nvhop++;
 
-    if(k == HE && jd == VACANCY) {// He becomes substitution 
-      hcount[i] = 0; // reset due to the reaction of He + V = SB 
+    if(k == HE && jd == VACANCY) {// He becomes substitution
+      hcount[i] = 0; // reset due to the reaction of He + V = SB
       hcount[j] = 0;
       element[i] = VO;
-      element[j] = SB; 
-      nsites_local[VO-1] ++;  
-      nsites_local[SB-1] ++; 
- 
-      nsites_local[HE-1] --;  
-      nsites_local[VACANCY-1] --;  
+      element[j] = SB;
+      nsites_local[VO-1] ++;
+      nsites_local[SB-1] ++;
+
+      nsites_local[HE-1] --;
+      nsites_local[VACANCY-1] --;
     } else {
       hcount[i] ++; // will be switch for i & j later
       element[i] = element[j];
       element[j] = k;
     }
 
-    // update He occupancy 
+    // update He occupancy
     if(element[i] == SB) {
       iHe[i] = 1;
       for(int nn = 0; nn < numneigh[i]; nn ++) {
@@ -986,15 +986,15 @@ void AppBccOcta::site_event(int i, class RandomPark *random)
       }
     } else {iHe[i] = 0;}
 
-    // update He occupancy 
+    // update He occupancy
     if(element[j] == SB) {
       iHe[j] = 1;
       for(int nn = 0; nn < numneigh[j]; nn ++) {
          if(element[neighbor[j][nn]] == HE) iHe[j] ++;
       }
-    } else {iHe[j] = 0;} 
- 
-    /*// switch global atomic id for recombination vector analysis, test only 
+    } else {iHe[j] = 0;}
+
+    /*// switch global atomic id for recombination vector analysis, test only
     k = aid[i];
     aid[i] = aid[j];
     aid[j] = aid[i];
@@ -1012,33 +1012,33 @@ void AppBccOcta::site_event(int i, class RandomPark *random)
     xyz0[j][2] = zi;
     // end test */
 
-    if(mfpflag && mfp[element[j]] > 0.0) { // This mean-field absorption works only for vacancy and SIA 
-      k = hcount[i]; 
-      hcount[i] = hcount[j]; 
-      hcount[j] = k; 
+    if(mfpflag && mfp[element[j]] > 0.0) { // This mean-field absorption works only for vacancy and SIA
+      k = hcount[i];
+      hcount[i] = hcount[j];
+      hcount[j] = k;
 
       //double r1 = (hcount[j] - mfp[element[j]]);
-      //double fx = exp(-r1*r1/sigmamfp)/varmfp; 
+      //double fx = exp(-r1*r1/sigmamfp)/varmfp;
       //if(ranbccocta->uniform() < fx) {
-      if(hcount[j] > mfp[element[j]]) { 
-        nhmfp[element[j]] ++; 
-        rhmfp[element[j]] += hcount[j]; 
- 
-        nsites_local[element[j]-1] --;  
-        nsites_local[FE-1] ++;  
-        element[j] = FE; //absorption 
-        hcount[j] = 0; 
-      }
-    } 
+      if(hcount[j] > mfp[element[j]]) {
+        nhmfp[element[j]] ++;
+        rhmfp[element[j]] += hcount[j];
 
-  } else { // reaction, element[i]<-j; rstyle 2  
+        nsites_local[element[j]-1] --;
+        nsites_local[FE-1] ++;
+        element[j] = FE; //absorption
+        hcount[j] = 0;
+      }
+    }
+
+  } else { // reaction, element[i]<-j; rstyle 2
     k = element[i];
     element[i] = j;
     rcount[which] ++;
     nsites_local[k-1] --;
     nsites_local[j-1] ++;
 
-    if(mfpflag) hcount[i] = 0; 
+    if(mfpflag) hcount[i] = 0;
     // update reaction target number
     for(ii = 0; ii < nreaction; ii++) {
       if(routput[ii] != j) continue;
@@ -1047,26 +1047,26 @@ void AppBccOcta::site_event(int i, class RandomPark *random)
   }
 
   // perform zero_barrier events: absorption and recombination
-  int rid = recombine(i); // recombine site i with its neighbor rid 
+  int rid = recombine(i); // recombine site i with its neighbor rid
   if(rid >= 0) update_propensity(rid);
- 
-  // calculate the vector between the two recombined site before diffusing into recombination radius 
-  // if(rid >= 0 && rstyle == 1) vec_recombine(i,rid); // i was at j site before diffusion 
- 
+
+  // calculate the vector between the two recombined site before diffusing into recombination radius
+  // if(rid >= 0 && rstyle == 1) vec_recombine(i,rid); // i was at j site before diffusion
+
   if(rstyle == 1) {
-    //recombine j with its neighbors too after hopping; 
-    int rid = recombine(j); // recombine site i with its neighbor rid 
+    //recombine j with its neighbors too after hopping;
+    int rid = recombine(j); // recombine site i with its neighbor rid
     if(rid >= 0) update_propensity(rid);
-  
-    // calculate the vector between the two recombined site before diffusing into recombination radius 
-    //if(rid >= 0) vec_recombine(j,rid); // j was at i site before diffusion 
+
+    // calculate the vector between the two recombined site before diffusing into recombination radius
+    //if(rid >= 0) vec_recombine(j,rid); // j was at i site before diffusion
 
     //sink absorption of element[j] after hopping,for hop only since no element produced at its sinks
     if(nsink > 0) {
       absorption(i);
-      absorption(j); 
+      absorption(j);
     }
-  } 
+  }
 
   // compute propensity changes for participating sites i & j and their neighbors
   update_propensity(i);
@@ -1083,7 +1083,7 @@ void AppBccOcta::site_event(int i, class RandomPark *random)
     }
   }
 
-  // check site validity in case of errors  
+  // check site validity in case of errors
     //if (element[i] == FE && type[i] == OCTA) fprintf(screen,"%d %d %d %d \n", i,j,which,rstyle);
     //if (element[j] == FE && type[j] == OCTA) fprintf(screen,"%d %d %d %d \n", i,j,which,rstyle);
     //if (element[i] != HE && element[i] != VO && type[i] == OCTA) error->all(FLERR,"site i value invalid");
@@ -1093,7 +1093,7 @@ void AppBccOcta::site_event(int i, class RandomPark *random)
 }
 
 /* ----------------------------------------------------------------------
-   absorption of an element at site i  
+   absorption of an element at site i
 ------------------------------------------------------------------------- */
 void AppBccOcta::absorption(int i)
 {
@@ -1107,7 +1107,7 @@ void AppBccOcta::absorption(int i)
           nsites_local[FE-1] ++;
           element[i] = FE;
 
-          if(mfpflag) hcount[i] = 0; 
+          if(mfpflag) hcount[i] = 0;
           // update reaction target number
           if(reaction_flag == 1) {
             for(int ii = 0; ii < nreaction; ii++) {
@@ -1120,11 +1120,11 @@ void AppBccOcta::absorption(int i)
 }
 
 /* ----------------------------------------------------------------------
-   calculate the vector between two recombined atoms i and j in vector form. 
+   calculate the vector between two recombined atoms i and j in vector form.
 ------------------------------------------------------------------------- */
 /*void AppBccOcta::vec_recombine (int i, int j)
-{  
-   double dij[3], lprd[3], phi, eta; 
+{
+   double dij[3], lprd[3], phi, eta;
    int m, n, periodicity[3];
 
    periodicity[0] = domain->xperiodic;
@@ -1134,43 +1134,43 @@ void AppBccOcta::absorption(int i)
    lprd[1] = domain->yprd;
    lprd[2] = domain->zprd;
 
-   for (int k = 0; k < 3; k++) { 
+   for (int k = 0; k < 3; k++) {
        dij[k] = xyz0[j][k] - xyz0[i][k];
        if (periodicity[k] && dij[k] >= lprd[k]/2.0) dij[k] -= lprd[k];
        if (periodicity[k] && dij[k] <= -lprd[k]/2.0) dij[k] += lprd[k];
-   } 
-  
+   }
+
    double x = dij[0];
    double y = dij[1];
    double z = dij[2];
    double xy = sqrt(x*x + y*y);
-   double xyz = sqrt(xy*xy+z*z); 
- 
-   if(xyz > 0.0) { // do not count recombination in short distance to reduce initial effect 
-     eta = phi = 0.0; 
-     double pi = acos(-1.0); 
-     if (xy == 0) { 
+   double xyz = sqrt(xy*xy+z*z);
+
+   if(xyz > 0.0) { // do not count recombination in short distance to reduce initial effect
+     eta = phi = 0.0;
+     double pi = acos(-1.0);
+     if (xy == 0) {
         phi = 0;
-        eta = pi/2; 
+        eta = pi/2;
         if (z <= 0) eta = -pi/2;
      } else {
         eta = atan(z/xy);
         phi = acos(x/xy);
-        if(y < 0) phi += pi; 
-     }  
+        if(y < 0) phi += pi;
+     }
 
      m = static_cast<int>(phi*180/pi);
      n = static_cast<int>((eta+pi/2.0)*180/pi);
- 
-     //fprintf(screen, "%d %d %d %d %f %f vec_rec \n",i, j, m, n, x, y); 
-     if(m<0 || n<0) error->all(FLERR,"recombination vector calculated wrongly!");    
+
+     //fprintf(screen, "%d %d %d %d %f %f vec_rec \n",i, j, m, n, x, y);
+     if(m<0 || n<0) error->all(FLERR,"recombination vector calculated wrongly!");
      reccount[m][n] ++;
    }
 
 }*/
 
 /* ----------------------------------------------------------------------
-   calculate the distance between i and j in vector form. 
+   calculate the distance between i and j in vector form.
 ------------------------------------------------------------------------- */
 void AppBccOcta::distanceIJ(int i, int j, double dij[3])
 {
@@ -1189,78 +1189,78 @@ void AppBccOcta::distanceIJ(int i, int j, double dij[3])
        dij[k] = xyz[j][k] - xyz[i][k];
        if (periodicity[k] && dij[k] >= lprd[k]/2.0) dij[k] -= lprd[k];
        if (periodicity[k] && dij[k] <= -lprd[k]/2.0) dij[k] += lprd[k];
-   } 
+   }
 }
 /* ----------------------------------------------------------------------
    recombine site i with one of its neighbor if needed.
-   return site id which just recombined with i to update propensity.  
-   reset target numbers of reactions if recombined 
+   return site id which just recombined with i to update propensity.
+   reset target numbers of reactions if recombined
 ------------------------------------------------------------------------- */
 int AppBccOcta::recombine(int i)
-{ 
+{
   if(type[i] == OCTA || element[i] == FE) return -1;
 
-  // recombine by radius 
+  // recombine by radius
   int jd = -1; // id of the neighbor to be recombined
 
-  if(rrecombine == 4) { 
+  if(rrecombine == 4) {
     for(int n = 0; n < numneigh4[i]; n++) {
        int m = neighbor4[i][n];
 
        if(type[m] == OCTA || iHe[m] > 2) continue;
-       if(element[i] != VACANCY && element[m] != VACANCY && element[i] != SB && element[m] != SB) continue; // None vacancy or substititute 
-       if(element[i] < I1 && element[m] < I1) continue; // None SIA 
- 
-       jd = m; 
+       if(element[i] != VACANCY && element[m] != VACANCY && element[i] != SB && element[m] != SB) continue; // None vacancy or substititute
+       if(element[i] < I1 && element[m] < I1) continue; // None SIA
+
+       jd = m;
        if(jd >= 0) break;
-    } 
-  } else if(rrecombine == 2) {  
+    }
+  } else if(rrecombine == 2) {
     for(int n = 0; n < numneigh[i]; n++) {
        int m = neighbor[i][n];
 
        if(type[m] != BCC || iHe[m] > 2) continue;
-       //if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy 
-       if(element[i] != VACANCY && element[m] != VACANCY && element[i] != SB && element[m] != SB) continue; // None vacancy 
-       if(element[i] < I1 && element[m] < I1) continue; // None SIA 
-   
-       jd = m; 
+       //if(element[i] != VACANCY && element[m] != VACANCY) continue; // None vacancy
+       if(element[i] != VACANCY && element[m] != VACANCY && element[i] != SB && element[m] != SB) continue; // None vacancy
+       if(element[i] < I1 && element[m] < I1) continue; // None SIA
+
+       jd = m;
        if(jd >= 0) break;
-    } 
+    }
 
     if(jd < 0) {
       for(int n = 0; n < numneigh2[i]; n++) {
          int m = neighbor2[i][n];
- 
-         if(type[m] != BCC || iHe[m] > 2) continue;
-         if(element[i] != VACANCY && element[m] != VACANCY && element[i] != SB && element[m] != SB) continue; // None vacancy 
-         if(element[i] < I1 && element[m] < I1) continue; // None SIA 
 
-         jd = m; 
+         if(type[m] != BCC || iHe[m] > 2) continue;
+         if(element[i] != VACANCY && element[m] != VACANCY && element[i] != SB && element[m] != SB) continue; // None vacancy
+         if(element[i] < I1 && element[m] < I1) continue; // None SIA
+
+         jd = m;
          if(jd >= 0) break;
       }
-    } 
+    }
   } else {
     for(int n = 0; n < numneigh[i]; n++) {
        int m = neighbor[i][n];
 
        if(type[m] != BCC || iHe[m] > 2) continue;
-       if(element[i] != VACANCY && element[m] != VACANCY && element[i] != SB && element[m] != SB) continue; // None vacancy 
-       if(element[i] < I1 && element[m] < I1) continue; // None SIA 
-   
-       jd = m; 
+       if(element[i] != VACANCY && element[m] != VACANCY && element[i] != SB && element[m] != SB) continue; // None vacancy
+       if(element[i] < I1 && element[m] < I1) continue; // None SIA
+
+       jd = m;
        if(jd >= 0) break;
-    } 
+    }
   }
-  
-  if(jd < 0) return jd; 
- 
+
+  if(jd < 0) return jd;
+
   nrecombine[element[i]-1] ++;
   nrecombine[element[jd]-1] ++;
   nsites_local[element[i]-1] --;
   nsites_local[element[jd]-1] --;
   nsites_local[FE-1] += 2;
 
-  int sd  = -1; 
+  int sd  = -1;
   if(element[i] == SB) sd = i;
   if(element[jd] == SB) sd = jd;
 
@@ -1268,7 +1268,7 @@ int AppBccOcta::recombine(int i)
   element[jd] = FE;
 
   if(mfpflag) {hcount[i] = 0; hcount[jd-1] = 0;}
-  
+
   // update reaction target number
   if(reaction_flag == 1) {
     for(int k = 0; k < nreaction; k++) {
@@ -1276,15 +1276,15 @@ int AppBccOcta::recombine(int i)
     }
   }
 
-  if(sd < 0) return jd; 
+  if(sd < 0) return jd;
 
-  // add an He of an SB is recombined 
+  // add an He of an SB is recombined
   for(int n = 0; n < numneigh[sd]; n ++) {
      int sn = neighbor[sd][n];
      if(element[sn] != VO) continue;
 
      element[sn] = HE;
-     break; 
+     break;
   }
 
   return jd;
@@ -1464,9 +1464,9 @@ void AppBccOcta::add_event(int i, int j, int rstyle, int which, double propensit
 void AppBccOcta::sia_concentration(double t)
 {
   double ci = 0.0;
-  for (int i = 0; i < nlocal; i ++ ) {if(element[i] >= I1) ci ++; }  
+  for (int i = 0; i < nlocal; i ++ ) {if(element[i] >= I1) ci ++; }
   csia += ci*t/nlocal;
-  
+
 }
 
 /* ----------------------------------------------------------------------
@@ -1490,74 +1490,74 @@ void AppBccOcta::check_ballistic(double t)
 }
 
 /* ----------------------------------------------------------------------
-  Create Frenkel pairs randomly. may need to scale the dose rate 
-  by the # of processors when  work in parallel   
+  Create Frenkel pairs randomly. may need to scale the dose rate
+  by the # of processors when  work in parallel
 ------------------------------------------------------------------------- */
 
 void AppBccOcta::ballistic(int n)
 {
   // creat an vacancy
-  if(nsites_local[FE-1] == 0) error->all(FLERR, "No bcc sites available for FP generation!");      
-  if(nsites_local[VO-1] == 0) error->all(FLERR, "No octahedron sites available for He generation!");      
+  if(nsites_local[FE-1] == 0) error->all(FLERR, "No bcc sites available for FP generation!");
+  if(nsites_local[VO-1] == 0) error->all(FLERR, "No octahedron sites available for He generation!");
 
-  nFPair ++;   
-  int findv = 1;   
-  while (findv) { 
-    int id = static_cast<int> (nlocal*ranbccocta->uniform()); 
-    if(id < nlocal && element[id] == FE) { 
-      element[id] = VACANCY; 
-      nsites_local[VACANCY-1] ++; 
-      nsites_local[FE-1] --;     
-      
-      // recalculate the propensity if defects are generated 
+  nFPair ++;
+  int findv = 1;
+  while (findv) {
+    int id = static_cast<int> (nlocal*ranbccocta->uniform());
+    if(id < nlocal && element[id] == FE) {
+      element[id] = VACANCY;
+      nsites_local[VACANCY-1] ++;
+      nsites_local[FE-1] --;
+
+      // recalculate the propensity if defects are generated
       update_propensity(id);
-      findv = 0; 
+      findv = 0;
     }
-  } 
-  
-  //return; // spk_v no interstitial creation for test 
-  //create an interstitial  
-  int findi = 1;   
-  while (findi) { 
-    int id = static_cast<int> (nlocal*ranbccocta->uniform()); 
-    if(id < nlocal && element[id] == FE) { 
-      if(nelement == VACANCY) error->all(FLERR, "simulation contains no SIAs"); 
-      double dx = 1.0/(nelement - I1 + 1);  // equal probability for each type of SIA 
-      double r1 = ranbccocta->uniform(); 
+  }
+
+  //return; // spk_v no interstitial creation for test
+  //create an interstitial
+  int findi = 1;
+  while (findi) {
+    int id = static_cast<int> (nlocal*ranbccocta->uniform());
+    if(id < nlocal && element[id] == FE) {
+      if(nelement == VACANCY) error->all(FLERR, "simulation contains no SIAs");
+      double dx = 1.0/(nelement - I1 + 1);  // equal probability for each type of SIA
+      double r1 = ranbccocta->uniform();
 
       for (int i = 1; i <= nelement - I1 + 1; i++) {
-          if(findi == 0) continue; // SIA already generated  
-          if(r1 < i*dx) { 
-            element[id] = I1 -1  + i; 
-            nsites_local[I1-1+i-1] ++; 
-            nsites_local[FE-1] --;  
-   
-            // recalculate the propensity if defects are generated 
-            update_propensity(id);      
+          if(findi == 0) continue; // SIA already generated
+          if(r1 < i*dx) {
+            element[id] = I1 -1  + i;
+            nsites_local[I1-1+i-1] ++;
+            nsites_local[FE-1] --;
+
+            // recalculate the propensity if defects are generated
+            update_propensity(id);
             findi = 0;
-          } 
-      } 
+          }
+      }
     }
   }
 
   // gas generation
-  if(gas_rate == 0) return; // no gas generation 
-  if(ranbccocta->uniform() > gas_rate) return; // gas/V_octa ratio no big than one 
-  int findg = 1;   
-  while (findg) { 
-    int id = static_cast<int> (nlocal*ranbccocta->uniform()); 
-    if (id < nlocal && element[id] == VO) { 
-       element[id] = HE; 
-       nsites_local[HE-1] ++; 
-       nsites_local[VO-1] --;  
-   
-       // recalculate the propensity if defects are generated 
-       update_propensity(id);      
+  if(gas_rate == 0) return; // no gas generation
+  if(ranbccocta->uniform() > gas_rate) return; // gas/V_octa ratio no big than one
+  int findg = 1;
+  while (findg) {
+    int id = static_cast<int> (nlocal*ranbccocta->uniform());
+    if (id < nlocal && element[id] == VO) {
+       element[id] = HE;
+       nsites_local[HE-1] ++;
+       nsites_local[VO-1] --;
+
+       // recalculate the propensity if defects are generated
+       update_propensity(id);
        findg = 0;
-       return;  
-    } 
+       return;
+    }
   }
- 
+
 }
 
 /* ----------------------------------------------------------------------
@@ -1581,23 +1581,23 @@ int AppBccOcta::ibonde(int a, int b, int c)
   return ((a-1)*c + b - a*(a-1)/2);
 }
 
- 
+
 /* ----------------------------------------------------------------------
-  match element. Return 0 if match, 1 otherwise 
-------------------------------------------------------------------------- */ 
+  match element. Return 0 if match, 1 otherwise
+------------------------------------------------------------------------- */
 int AppBccOcta::match(int i)
-{ 
+{
   int j,iele,imatch,jtype;
   iele = element[i];
   imatch = 1;
   for (j=0; j < nctype; j++) imatch *=(iele - ncelem[j]);
   return imatch;
- 
+
 }
 
 /* ----------------------------------------------------------------------
-  perform cluster analysis to obtain precipitation kinetics, currently 
-  works in serial only  
+  perform cluster analysis to obtain precipitation kinetics, currently
+  works in serial only
 ------------------------------------------------------------------------- */
 
 void AppBccOcta::cluster()
@@ -1606,27 +1606,27 @@ void AppBccOcta::cluster()
 
   csize = new int[nlocal];
   cid = new int[nlocal];
-  for (i=0; i<nlocal; i++) cid[i] = -1; 
-  for (i=0; i<nlocal; i++) csize[i] = 0; 
-  
-  // check 1NN atoms 
+  for (i=0; i<nlocal; i++) cid[i] = -1;
+  for (i=0; i<nlocal; i++) csize[i] = 0;
+
+  // check 1NN atoms
   for (i=0; i<nlocal; i++) {
       if(cid[i] >=0) continue; // already assigned to a cluster
-      if(match(i)) continue; // type not match 
+      if(match(i)) continue; // type not match
       cid[i] = i;
       csize[i] ++;
-      
+
       n1nn = numneigh[i]; // 1NN linkage
       for (j=0; j<n1nn; j++) {
           jd = neighbor[i][j];
           if(cid[jd] >= 0) continue; // already assigned to a cluster
-          if(match(jd)) continue; // type not match 
+          if(match(jd)) continue; // type not match
           cid[jd] = i;
           csize[i] ++;
-      } 
-  }    
+      }
+  }
 
-  // iterate to link all clusters until done  
+  // iterate to link all clusters until done
   int ccflag = 1;
   int cmin = 0;
   int n = 0;
@@ -1642,9 +1642,9 @@ void AppBccOcta::cluster()
               jd = neighbor[i][j];
               if(cid[jd] < 0) continue;
               if(cid[jd] < cmin) {
-                ccflag = 1; 
+                ccflag = 1;
                 cmin = cid[jd];
-              } 
+              }
           }
 
           if(ccflag) {
@@ -1657,27 +1657,27 @@ void AppBccOcta::cluster()
                 csize[cid[jd]] --;
                 csize[cmin] ++;
                 cid[jd] = cmin;
-            } 
+            }
           }
       }
-  }          
-       
+  }
+
   // calculate average size and total numbers
   ncluster = 0;
-  rcluster = 0.0; 
+  rcluster = 0.0;
   for (i=0; i<nlocal; i++) {
       iarray[2][i] = -1;
       if(cid[i] < 0) continue;
       if(csize[cid[i]] < ncsize) continue;
       iarray[2][i] = cid[i];
       if(cid[i] != i) continue;
-      rcluster +=csize[i]; // total atoms in all clusters 
-      ncluster ++; // each cluster is represented by its member with smallest atom id 
+      rcluster +=csize[i]; // total atoms in all clusters
+      ncluster ++; // each cluster is represented by its member with smallest atom id
   }
 
   if(ncluster > 0) rcluster /= ncluster;
-  delete [] cid;  
-  delete [] csize;  
+  delete [] cid;
+  delete [] csize;
 }
 
 /* ----------------------------------------------------------------------

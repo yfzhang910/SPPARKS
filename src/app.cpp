@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -32,7 +32,7 @@ App::App(SPPARKS *spk, int narg, char **arg) : Pointers(spk)
 
   appclass = GENERAL;
   time = 0.0;
-  realtime = 0.0; 
+  realtime = 0.0;
   first_run = 1;
 
   ninteger = ndouble = 0;

@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -25,17 +25,17 @@
 
 using namespace SPPARKS_NS;
 
-enum{inter,floater};                              // data type 
-enum{FE=0,CU,NI,VACANCY,I1,I2,I3,I4,I5,I6};       // diagnosis terms   
+enum{inter,floater};                              // data type
+enum{FE=0,CU,NI,VACANCY,I1,I2,I3,I4,I5,I6};       // diagnosis terms
 enum{hFE=11,hCU,hNI,hMN,hSi,hP,hC};               // hop steps for each element
-enum{sink=20};                                    // number of sink absorption   
-enum{recombine=31,FPair,vabsorb,iabsorb};         // number of recombination    
-enum{cFE=40,cCU,cNI,cVACANCY,cI1,cI2,cI3,cI4,cI5,cI6};        // time averaged concentration    
-enum{dFE=51,dCU,dNI,dVACANCY,dI1,dI2,dI3,dI4,dI5,dI6}; // MSD for each element 
-enum{energy=61,treal,fvt};                        // energy and realistic time  
-enum{ris=70};                                     // number of ris   
-enum{lij=80};                                     // onsager coefficient   
-enum{sro=180};                                     // short range order   
+enum{sink=20};                                    // number of sink absorption
+enum{recombine=31,FPair,vabsorb,iabsorb};         // number of recombination
+enum{cFE=40,cCU,cNI,cVACANCY,cI1,cI2,cI3,cI4,cI5,cI6};        // time averaged concentration
+enum{dFE=51,dCU,dNI,dVACANCY,dI1,dI2,dI3,dI4,dI5,dI6}; // MSD for each element
+enum{energy=61,treal,fvt};                        // energy and realistic time
+enum{ris=70};                                     // number of ris
+enum{lij=80};                                     // onsager coefficient
+enum{sro=180};                                     // short range order
 /* ---------------------------------------------------------------------- */
 
 DiagRis::DiagRis(SPPARKS *spk, int narg, char **arg) : Diag(spk,narg,arg)
@@ -44,7 +44,7 @@ DiagRis::DiagRis(SPPARKS *spk, int narg, char **arg) : Diag(spk,narg,arg)
     error->all(FLERR,"Diag_style ris requires app_style ris");
 
   nlist = 0;
- 
+
   int iarg = iarg_child;
   while (iarg < narg) {
     if (strcmp(arg[iarg],"list") == 0) {
@@ -66,7 +66,7 @@ DiagRis::DiagRis(SPPARKS *spk, int narg, char **arg) : Diag(spk,narg,arg)
   index = new int[nlist];
   itype = new int[nlist];
   ivector = new int[nlist];
-  dvector = new double[nlist+1]; //nelement + total energy 
+  dvector = new double[nlist+1]; //nelement + total energy
 }
 
 /* ---------------------------------------------------------------------- */
@@ -92,7 +92,7 @@ void DiagRis::init()
   csiteflag = 0;
   hopflag = 0;
   msdflag = 0;
-  risflag = appris->ris_flag;; 
+  risflag = appris->ris_flag;;
 
   for (int i = 0; i < nlist; i++) {
     if (strcmp(list[i],"fe") == 0) which[i] = FE; //total sites
@@ -106,7 +106,7 @@ void DiagRis::init()
     else if (strcmp(list[i],"i5") == 0) which[i] = I5;
     else if (strcmp(list[i],"i6") == 0) which[i] = I6;
 
-    else if (strcmp(list[i],"cfe") == 0) which[i] = cFE; //time averaged concentration 
+    else if (strcmp(list[i],"cfe") == 0) which[i] = cFE; //time averaged concentration
     else if (strcmp(list[i],"ccu") == 0) which[i] = cCU;
     else if (strcmp(list[i],"cni") == 0) which[i] = cNI;
     else if (strcmp(list[i],"cvac") == 0) which[i] = cVACANCY;
@@ -124,11 +124,11 @@ void DiagRis::init()
     else if (strcmp(list[i],"hmn") == 0) which[i] = hMN;
     else if (strcmp(list[i],"hp") == 0) which[i] = hP;
     else if (strcmp(list[i],"hc") == 0) which[i] = hC;
-   */ 
-    else if (strcmp(list[i],"dfe") == 0) which[i] = dFE;//MSD 
+   */
+    else if (strcmp(list[i],"dfe") == 0) which[i] = dFE;//MSD
     else if (strcmp(list[i],"dcu") == 0) which[i] = dCU;
     else if (strcmp(list[i],"dni") == 0) which[i] = dNI;
-    else if (strcmp(list[i],"dvac") == 0) which[i] = dVACANCY; 
+    else if (strcmp(list[i],"dvac") == 0) which[i] = dVACANCY;
     else if (strcmp(list[i],"di1") == 0) which[i] = dI1;
     else if (strcmp(list[i],"di2") == 0) which[i] = dI2;
     else if (strcmp(list[i],"di3") == 0) which[i] = dI3;
@@ -136,15 +136,15 @@ void DiagRis::init()
     else if (strcmp(list[i],"di5") == 0) which[i] = dI5;
     else if (strcmp(list[i],"di6") == 0) which[i] = dI6;
  /*
-    else if (strcmp(list[i],"mfe") == 0) which[i] = mFE;//MSD 
-    else if (strcmp(list[i],"mvac") == 0) which[i] = mVACANCY; 
+    else if (strcmp(list[i],"mfe") == 0) which[i] = mFE;//MSD
+    else if (strcmp(list[i],"mvac") == 0) which[i] = mVACANCY;
     else if (strcmp(list[i],"mcu") == 0) which[i] = mCU;
     else if (strcmp(list[i],"mni") == 0) which[i] = mNI;
     else if (strcmp(list[i],"mmn") == 0) which[i] = mMN;
     else if (strcmp(list[i],"mp") == 0) which[i] = mP;
     else if (strcmp(list[i],"mc") == 0) which[i] = mC;
     else if (strcmp(list[i],"msia") == 0) which[i] = mSIA;
- 
+
     else if (strcmp(list[i],"treal") == 0) which[i] = treal;
     else if (strcmp(list[i],"fvt") == 0) which[i] = fvt;
 */
@@ -155,7 +155,7 @@ void DiagRis::init()
     else if (strcmp(list[i],"energy") == 0) which[i] = energy;
     else if (list[i][0] == 's' && list[i][1] == 'i' && list[i][2] == 'n' && list[i][3] == 'k') {
       int id = list[i][4] - '0';
-      which[i] = sink + id; 
+      which[i] = sink + id;
     }
 
     // ris of element i
@@ -164,14 +164,14 @@ void DiagRis::init()
       which[i] = ris + id;
     }
 
-    // onsager coefficients  
+    // onsager coefficients
     else if (list[i][0] == 'l' && list[i][1] == 'i' && list[i][2] == 'j') {
       int id1 = list[i][3] - '0';
       int id2 = list[i][4] - '0';
       which[i] = lij + id1*10 + id2;
     }
 
-    // short range order   
+    // short range order
     else if (list[i][0] == 's' && list[i][1] == 'r' && list[i][2] == 'o') {
       int id1 = list[i][3] - '0';
       int id2 = list[i][4] - '0';
@@ -189,7 +189,7 @@ void DiagRis::init()
   //  if (which[i] == hFE || which[i] == hCU || which[i] == hNI || which[i] == hMN || which[i] == hP || which[i] == hC)
   //    hopflag = 1;
     if(which[i] >= dFE && appris->diffusionflag == 1) msdflag = 1;
-  //  if(which[i] >= dFE && which[i] <= dI6 && msdflag == 0) error->all(FLERR,"MSD calculation need displacement calculated in appris"); 
+  //  if(which[i] >= dFE && which[i] <= dI6 && msdflag == 0) error->all(FLERR,"MSD calculation need displacement calculated in appris");
   }
 
   for (int i = 0; i < nlist; i++) {ivector[i] = 0;
@@ -209,16 +209,16 @@ void DiagRis::compute()
   int sites[10],nhop[10],ivalue; // int data
   int nlocal = appris->nlocal;
   int nelement = appris->nelement;
-  double dvalue; // double data 
-  double *csites; 
+  double dvalue; // double data
+  double *csites;
   double msd[10];
 
   ninter = nfloater = 0;
   dvalue = 0.0;
- 
+
   if (risflag) {
-     appris->ris_time(); 
-  } 
+     appris->ris_time();
+  }
 
   if (siteflag) {
     sites[FE] = sites[VACANCY] = sites[CU] = sites[NI] = 0;
@@ -227,17 +227,17 @@ void DiagRis::compute()
     for (int i = 0; i < nlocal; i++) sites[element[i]]++;
   }
 
-  if(csiteflag) {csites = appris->ct;} 
+  if(csiteflag) {csites = appris->ct;}
 /*
-  if(hopflag) {// hop event of each element 
-    for(int i = 1; i < nelement+1; i++) {nhop[i] = 0; nhop[i] = appris->hcount[i];}   
+  if(hopflag) {// hop event of each element
+    for(int i = 1; i < nelement+1; i++) {nhop[i] = 0; nhop[i] = appris->hcount[i];}
   }
 */
-  if(msdflag) {// MSD calculation 
+  if(msdflag) {// MSD calculation
     int *element = appris->element;
     msd[FE] = msd[VACANCY] = msd[CU] = msd[NI] = 0.0;
     msd[I1] = msd[I2] = msd[I3] = msd[I4] =msd[I5] =msd[I6]  =0.0;
-    if(siteflag == 0) {//need to count total sites if not calculated above 
+    if(siteflag == 0) {//need to count total sites if not calculated above
       sites[FE] = sites[VACANCY] = sites[CU] = sites[NI] = 0;
       sites[I1] = sites[I2] = sites[I3] = sites[I4] = sites[I5] = sites[I6] = 0;
       for (int i = 0; i < nlocal; i++) sites[element[i]]++;
@@ -245,7 +245,7 @@ void DiagRis::compute()
 
     for(int i = 0; i < nlocal; i++) {
        msd[element[i]] += appris->disp[3][i];
-    }   
+    }
   }
 
     //fprintf(screen, "%f %f \n", csites[1],csites[2]);
@@ -254,19 +254,19 @@ void DiagRis::compute()
     else if (which[i] == CU) ivalue = sites[CU];
     else if (which[i] == NI) ivalue = sites[NI];
     else if (which[i] == VACANCY) ivalue = sites[VACANCY];
-    else if (which[i] == I1) ivalue = sites[I1]; 
-    else if (which[i] == I2) ivalue = sites[I2]; 
+    else if (which[i] == I1) ivalue = sites[I1];
+    else if (which[i] == I2) ivalue = sites[I2];
     else if (which[i] == I3) ivalue = sites[I3];
     else if (which[i] == I4) ivalue = sites[I4];
     else if (which[i] == I5) ivalue = sites[I5];
     else if (which[i] == I6) ivalue = sites[I6];
 
-    else if (which[i] == cFE) dvalue = csites[FE]; //time_averaged concentration 
+    else if (which[i] == cFE) dvalue = csites[FE]; //time_averaged concentration
     else if (which[i] == cCU) dvalue = csites[CU];
     else if (which[i] == cNI) dvalue = csites[NI];
     else if (which[i] == cVACANCY) dvalue = csites[VACANCY];
-    else if (which[i] == cI1) dvalue = csites[I1]; 
-    else if (which[i] == cI2) dvalue = csites[I2]; 
+    else if (which[i] == cI1) dvalue = csites[I1];
+    else if (which[i] == cI2) dvalue = csites[I2];
     else if (which[i] == cI3) dvalue = csites[I3];
     else if (which[i] == cI4) dvalue = csites[I4];
     else if (which[i] == cI5) dvalue = csites[I5];
@@ -275,48 +275,48 @@ void DiagRis::compute()
     else if (which[i] == mVACANCY) ivalue = monomer_local[VACANCY];
     else if (which[i] == mCU) ivalue = monomer_local[CU];
     else if (which[i] == mNI) ivalue = monomer_local[NI];
-    else if (which[i] == mMN) ivalue = monomer_local[MN]; 
-    else if (which[i] == mP) ivalue = monomer_local[P]; 
+    else if (which[i] == mMN) ivalue = monomer_local[MN];
+    else if (which[i] == mP) ivalue = monomer_local[P];
     else if (which[i] == mC) ivalue = monomer_local[C];
     else if (which[i] == mSIA) ivalue = monomer_local[SIA];
-    
+
     else if (which[i] == hFE) ivalue = nhop[FE]; //total hop events
     else if (which[i] == hCU) ivalue = nhop[CU];
     else if (which[i] == hNI) ivalue = nhop[NI];
-    else if (which[i] == hMN) ivalue = nhop[MN]; 
-    else if (which[i] == hP) ivalue = nhop[P]; 
+    else if (which[i] == hMN) ivalue = nhop[MN];
+    else if (which[i] == hP) ivalue = nhop[P];
     else if (which[i] == hC) ivalue = nhop[C];
     */
-    else if (which[i] == dFE && sites[FE] > 0) dvalue = msd[FE]/sites[FE];//MSD 
-    else if (which[i] == dVACANCY && sites[VACANCY] > 0) dvalue = msd[VACANCY]/sites[VACANCY]; 
-    else if (which[i] == dCU && sites[CU] > 0) dvalue = msd[CU]/sites[CU]; 
-    else if (which[i] == dNI && sites[NI] > 0) dvalue = msd[NI]/sites[NI]; 
-    else if (which[i] == dI1 && sites[I1] > 0) dvalue = msd[I1]/sites[I1]; 
-    else if (which[i] == dI2 && sites[I2] > 0) dvalue = msd[I2]/sites[I2]; 
-    else if (which[i] == dI3 && sites[I3] > 0) dvalue = msd[I3]/sites[I3]; 
-    else if (which[i] == dI4 && sites[I4] > 0) dvalue = msd[I4]/sites[I4]; 
-    else if (which[i] == dI5 && sites[I5] > 0) dvalue = msd[I5]/sites[I5]; 
-    else if (which[i] == dI6 && sites[I6] > 0) dvalue = msd[I6]/sites[I6]; 
+    else if (which[i] == dFE && sites[FE] > 0) dvalue = msd[FE]/sites[FE];//MSD
+    else if (which[i] == dVACANCY && sites[VACANCY] > 0) dvalue = msd[VACANCY]/sites[VACANCY];
+    else if (which[i] == dCU && sites[CU] > 0) dvalue = msd[CU]/sites[CU];
+    else if (which[i] == dNI && sites[NI] > 0) dvalue = msd[NI]/sites[NI];
+    else if (which[i] == dI1 && sites[I1] > 0) dvalue = msd[I1]/sites[I1];
+    else if (which[i] == dI2 && sites[I2] > 0) dvalue = msd[I2]/sites[I2];
+    else if (which[i] == dI3 && sites[I3] > 0) dvalue = msd[I3]/sites[I3];
+    else if (which[i] == dI4 && sites[I4] > 0) dvalue = msd[I4]/sites[I4];
+    else if (which[i] == dI5 && sites[I5] > 0) dvalue = msd[I5]/sites[I5];
+    else if (which[i] == dI6 && sites[I6] > 0) dvalue = msd[I6]/sites[I6];
    /*
-    else if (which[i] == treal) dvalue = appris->realtime; //realistic time  
-    else if (which[i] == fvt) dvalue = appris->fvt; //realistic time  
+    else if (which[i] == treal) dvalue = appris->realtime; //realistic time
+    else if (which[i] == fvt) dvalue = appris->fvt; //realistic time
    */
-    else if (which[i] == energy) dvalue = appris->total_energy(); //system energy 
-    else if (which[i] > sink && which[i] < recombine) { // to be updateed lated 
-     // int id = which[i] - sink; 
+    else if (which[i] == energy) dvalue = appris->total_energy(); //system energy
+    else if (which[i] > sink && which[i] < recombine) { // to be updateed lated
+     // int id = which[i] - sink;
      // ivalue = appris->nabsorption[id-1];
-     ivalue = 0; 
+     ivalue = 0;
     }
-    else if (which[i] == FPair) ivalue = appris->nFPair; //number of reocmbination 
+    else if (which[i] == FPair) ivalue = appris->nFPair; //number of reocmbination
     else if (which[i] == recombine) ivalue = appris->nrecombine[VACANCY]; //number of reocmbination
     else if (which[i] == vabsorb) {
       int nabsorb = 0;
       int nsink = appris->nsink;
-      for(int i = 1; i < nsink+1; i++) { // sink id starts from 1 
+      for(int i = 1; i < nsink+1; i++) { // sink id starts from 1
          nabsorb += appris->nabsorption[VACANCY][i];
       }
       ivalue = nabsorb;
-    } 
+    }
     else if (which[i] == iabsorb) {
       int nabsorb = 0;
       int nsink = appris->nsink;
@@ -324,21 +324,21 @@ void DiagRis::compute()
          nabsorb += appris->nabsorption[I1][i] + appris->nabsorption[I2][i] + appris->nabsorption[I4][i] + appris->nabsorption[I4][i] + appris->nabsorption[I5][i] + appris->nabsorption[I6][i];
       }
       ivalue = nabsorb;
-    } 
-    else if (which[i] >= ris && which[i] < lij) { // ris  
-      int id = which[i] - ris; 
+    }
+    else if (which[i] >= ris && which[i] < lij) { // ris
+      int id = which[i] - ris;
       dvalue = appris->ris_total[id];
     }
-    else if (which[i] >= lij && which[i] < sro) { // onsager  
-      int id2 = (which[i] - lij)%10; 
+    else if (which[i] >= lij && which[i] < sro) { // onsager
+      int id2 = (which[i] - lij)%10;
       int id1 = (which[i] - lij - id2)/10;
       dvalue = appris->Lij[id1][id2]; // calcualted in appris->onsager()
     }
-    else if (which[i] >= sro) { // short range order   
-      int id2 = (which[i] - sro)%10; 
-      int id1 = (which[i] - sro - id2)/10; 
-      appris->short_range_order(); // compute short range order 
-      dvalue = appris->sro[id1][id2];  
+    else if (which[i] >= sro) { // short range order
+      int id2 = (which[i] - sro)%10;
+      int id1 = (which[i] - sro - id2)/10;
+      appris->short_range_order(); // compute short range order
+      dvalue = appris->sro[id1][id2];
     }
 
     if(which[i] >= cFE) nfloater++;

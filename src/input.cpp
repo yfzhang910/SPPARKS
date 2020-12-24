@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -112,7 +112,7 @@ void Input::file()
   int m,n;
 
   while (1) {
-    
+
     // read one line from input script
     // if line ends in continuation char '&', concatenate next line(s)
     // n = length of line including str terminator, 0 if end of file
@@ -162,7 +162,7 @@ void Input::file()
     // echo the command unless scanning for label
 
     if (me == 0 && label_active == 0) {
-      if (echo_screen && screen) fprintf(screen,"%s",line); 
+      if (echo_screen && screen) fprintf(screen,"%s",line);
       if (echo_log && logfile) fprintf(logfile,"%s",line);
     }
 
@@ -222,9 +222,9 @@ char *Input::one(const char *single)
   strcpy(line,single);
 
   // echo the command unless scanning for label
-  
+
   if (me == 0 && label_active == 0) {
-    if (echo_screen && screen) fprintf(screen,"%s",line); 
+    if (echo_screen && screen) fprintf(screen,"%s",line);
     if (echo_log && logfile) fprintf(logfile,"%s",line);
   }
 
@@ -365,7 +365,7 @@ void Input::substitute(char *str, int flag)
       strcpy(str,work);
       ptr += strlen(value);
       if (flag && me == 0 && label_active == 0) {
-	if (echo_screen && screen) fprintf(screen,"%s",str); 
+	if (echo_screen && screen) fprintf(screen,"%s",str);
 	if (echo_log && logfile) fprintf(logfile,"%s",str);
       }
       continue;
@@ -439,7 +439,7 @@ int Input::execute_command()
 
   // assume command is application-specific
 
-  if (app == NULL) 
+  if (app == NULL)
     error->all(FLERR,"App_style specific command before app_style set");
   app->input(command,narg,arg);
   return 0;
@@ -501,7 +501,7 @@ void Input::ifthenelse()
   } else error->all(FLERR,"Illegal if command");
 
   if (strcmp(arg[3],"then") != 0) error->all(FLERR,"Illegal if command");
-  if (narg == 7 && strcmp(arg[5],"else") != 0) 
+  if (narg == 7 && strcmp(arg[5],"else") != 0)
     error->all(FLERR,"Illegal if command");
 
   char str[128] = "\0";
@@ -521,7 +521,7 @@ void Input::include()
   if (me == 0) {
     if (nfile == maxfile) {
       maxfile++;
-      infiles = (FILE **) 
+      infiles = (FILE **)
         memory->srealloc(infiles,maxfile*sizeof(FILE *),"input:infiles");
     }
     infile = fopen(arg[0],"r");
@@ -636,7 +636,7 @@ void Input::variable_command()
 
 void Input::app_style()
 {
-  if (domain->box_exist) 
+  if (domain->box_exist)
     error->all(FLERR,"App_style command after simulation box is defined");
   if (narg < 1) error->all(FLERR,"Illegal app command");
   delete app;
@@ -658,7 +658,7 @@ void Input::app_style()
 
 void Input::boundary()
 {
-  if (domain->box_exist) 
+  if (domain->box_exist)
     error->all(FLERR,"Boundary command after simulation box is defined");
   domain->set_boundary(narg,arg);
 }
@@ -689,9 +689,9 @@ void Input::diag_style()
 
 void Input::dimension()
 {
-  if (domain->box_exist) 
+  if (domain->box_exist)
     error->all(FLERR,"Dimension command after simulation box is defined");
-  if (domain->lattice) 
+  if (domain->lattice)
     error->all(FLERR,"Dimension command after lattice is defined");
   if (narg != 1) error->all(FLERR,"Illegal dimension command");
 
@@ -741,7 +741,7 @@ void Input::lattice()
 void Input::pair_coeff()
 {
   if (app == NULL) error->all(FLERR,"Pair_coeff command before app_style set");
-  if (potential->pair == NULL) 
+  if (potential->pair == NULL)
     error->all(FLERR,"Pair_coeff command before pair_style is defined");
   potential->pair->coeff(narg,arg);
 }
@@ -809,7 +809,7 @@ void Input::seed()
   int seed = atoi(arg[0]);
   if (seed <= 0) error->all(FLERR,"Illegal seed command");
 
-  fprintf(screen,"The random number is: %d \n", seed); 
+  fprintf(screen,"The random number is: %d \n", seed);
   ranmaster->init(seed);
 }
 

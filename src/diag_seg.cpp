@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -25,17 +25,17 @@
 
 using namespace SPPARKS_NS;
 
-enum{inter,floater};                              		// data type 
-enum{VAC=0,INT,CE1,CE2,CE3,CE4,CE5,CE6,CE7,CE8};   		// CE: chemical element 
+enum{inter,floater};                              		// data type
+enum{VAC=0,INT,CE1,CE2,CE3,CE4,CE5,CE6,CE7,CE8};   		// CE: chemical element
 enum{hVAC=10,hINT,hCE1,hCE2,hCE3,hCE4,hCE5,hCE6,hCE7,hCE8}; 	// hop steps for each element
-enum{sink=20};                                    		// number of sink absorption   
-enum{recombine=30,FPair,selfion,vabsorb,iabsorb};         		// number of recombination, all integers till here    
+enum{sink=20};                                    		// number of sink absorption
+enum{recombine=30,FPair,selfion,vabsorb,iabsorb};         		// number of recombination, all integers till here
 enum{cVAC=40,cINT,cCE1,cCE2,cCE3,cCE4,cCE5,cCE6,cCE7,cCE8}; 	// time averaged concentration
 enum{dVAC=50,dINT,dCE1,dCE2,dCE3,dCE4,dCE5,dCE6,dCE7,dCE8}; 	// MSD
-enum{energy=60,treal,fvt};                        		// energy and realistic time  
-enum{ris=70};                                     		// number of ris   
-enum{lij=80};                                     		// onsager coefficient   
-enum{sro=180};                                     		// short range order   
+enum{energy=60,treal,fvt};                        		// energy and realistic time
+enum{ris=70};                                     		// number of ris
+enum{lij=80};                                     		// onsager coefficient
+enum{sro=180};                                     		// short range order
 /* ---------------------------------------------------------------------- */
 
 DiagSeg::DiagSeg(SPPARKS *spk, int narg, char **arg) : Diag(spk,narg,arg)
@@ -44,7 +44,7 @@ DiagSeg::DiagSeg(SPPARKS *spk, int narg, char **arg) : Diag(spk,narg,arg)
     error->all(FLERR,"Diag_style ris requires app_style seg");
 
   nlist = 0;
- 
+
   int iarg = iarg_child;
   while (iarg < narg) {
     if (strcmp(arg[iarg],"list") == 0) {
@@ -66,7 +66,7 @@ DiagSeg::DiagSeg(SPPARKS *spk, int narg, char **arg) : Diag(spk,narg,arg)
   index = new int[nlist];
   itype = new int[nlist];
   ivector = new int[nlist];
-  dvector = new double[nlist+1]; //nelement + total energy 
+  dvector = new double[nlist+1]; //nelement + total energy
 }
 
 /* ---------------------------------------------------------------------- */
@@ -92,7 +92,7 @@ void DiagSeg::init()
   csiteflag = 0;
   hopflag = 0;
   msdflag = 0;
-  risflag = appseg->seg_flag;; 
+  risflag = appseg->seg_flag;;
 
   for (int i = 0; i < nlist; i++) {
     if (strcmp(list[i],"vac") == 0) which[i] = VAC; //total sites
@@ -106,7 +106,7 @@ void DiagSeg::init()
     else if (strcmp(list[i],"ce7") == 0) which[i] = CE7;
     else if (strcmp(list[i],"ce8") == 0) which[i] = CE8;
 
-    else if (strcmp(list[i],"cvac") == 0) which[i] = cVAC; //time averaged concentration 
+    else if (strcmp(list[i],"cvac") == 0) which[i] = cVAC; //time averaged concentration
     else if (strcmp(list[i],"cint") == 0) which[i] = cINT;
     else if (strcmp(list[i],"cce1") == 0) which[i] = cCE1;
     else if (strcmp(list[i],"cce2") == 0) which[i] = cCE2;
@@ -117,8 +117,8 @@ void DiagSeg::init()
     else if (strcmp(list[i],"cce7") == 0) which[i] = cCE7;
     else if (strcmp(list[i],"cce8") == 0) which[i] = cCE8;
 
-   /*! hopping calculations disabled currently 
-    else if (strcmp(list[i],"hvac") == 0) which[i] = hVAC; //total hopping event n 
+   /*! hopping calculations disabled currently
+    else if (strcmp(list[i],"hvac") == 0) which[i] = hVAC; //total hopping event n
     else if (strcmp(list[i],"hint") == 0) which[i] = hINT;
     else if (strcmp(list[i],"hce1") == 0) which[i] = hCE1;
     else if (strcmp(list[i],"hce2") == 0) which[i] = hCE2;
@@ -130,7 +130,7 @@ void DiagSeg::init()
     else if (strcmp(list[i],"hce8") == 0) which[i] = hCE8;
    */
 
-    else if (strcmp(list[i],"dvac") == 0) which[i] = dVAC; //MSD 
+    else if (strcmp(list[i],"dvac") == 0) which[i] = dVAC; //MSD
     else if (strcmp(list[i],"dint") == 0) which[i] = dINT;
     else if (strcmp(list[i],"dce1") == 0) which[i] = dCE1;
     else if (strcmp(list[i],"dce2") == 0) which[i] = dCE2;
@@ -141,8 +141,8 @@ void DiagSeg::init()
     else if (strcmp(list[i],"dce7") == 0) which[i] = dCE7;
     else if (strcmp(list[i],"dce8") == 0) which[i] = dCE8;
 
-   /*// time correction due to trapping disable currently 
-    else if (strcmp(list[i],"mvac") == 0) which[i] = mVAC; /mononmer 
+   /*// time correction due to trapping disable currently
+    else if (strcmp(list[i],"mvac") == 0) which[i] = mVAC; /mononmer
     else if (strcmp(list[i],"mint") == 0) which[i] = mINT;
     else if (strcmp(list[i],"mce1") == 0) which[i] = mCE1;
     else if (strcmp(list[i],"mce2") == 0) which[i] = mCE2;
@@ -152,7 +152,7 @@ void DiagSeg::init()
     else if (strcmp(list[i],"mce6") == 0) which[i] = mCE6;
     else if (strcmp(list[i],"mce7") == 0) which[i] = mCE7;
     else if (strcmp(list[i],"mce8") == 0) which[i] = mCE8;
- 
+
     else if (strcmp(list[i],"treal") == 0) which[i] = treal;
     else if (strcmp(list[i],"fvt") == 0) which[i] = fvt;
    */
@@ -165,7 +165,7 @@ void DiagSeg::init()
     else if (strcmp(list[i],"energy") == 0) which[i] = energy;
     else if (list[i][0] == 's' && list[i][1] == 'i' && list[i][2] == 'n' && list[i][3] == 'k') {
       int id = list[i][4] - '0';
-      which[i] = sink + id; 
+      which[i] = sink + id;
     }
 
     // ris of element i
@@ -174,14 +174,14 @@ void DiagSeg::init()
       which[i] = ris + id;
     }
 
-    // onsager coefficients  
+    // onsager coefficients
     else if (list[i][0] == 'l' && list[i][1] == 'i' && list[i][2] == 'j') {
       int id1 = list[i][3] - '0';
       int id2 = list[i][4] - '0';
       which[i] = lij + id1*10 + id2;
     }
 
-    // short range order   
+    // short range order
     else if (list[i][0] == 's' && list[i][1] == 'r' && list[i][2] == 'o') {
       int id1 = list[i][3] - '0';
       int id2 = list[i][4] - '0';
@@ -218,40 +218,40 @@ void DiagSeg::compute()
   int sites[10],nhop[10],ivalue; // int data
   int nlocal = appseg->nlocal;
   int nelement = appseg->nelement;
-  double dvalue; // double data 
-  double *csites; 
+  double dvalue; // double data
+  double *csites;
   double msd[10];
 
   ninter = nfloater = 0;
   dvalue = 0.0;
 
-  // time dependent segregation profile  
+  // time dependent segregation profile
   if (risflag) {
-     appseg->ris_time(); 
-  } 
+     appseg->ris_time();
+  }
 
-  // site information 
+  // site information
   if (siteflag || msdflag) {
     for(i=VAC; i<nelement; i++) sites[i] = 0;
     int *element = appseg->element;
     for(i = 0; i < nlocal; i++) sites[element[i]]++;
   }
 
-  if(csiteflag) {csites = appseg->ct;} 
+  if(csiteflag) {csites = appseg->ct;}
 
   /*
-  if(hopflag) {// hop event of each element 
-    for(int i = 1; i < nelement+1; i++) {nhop[i] = 0; nhop[i] = appseg->hcount[i];}   
+  if(hopflag) {// hop event of each element
+    for(int i = 1; i < nelement+1; i++) {nhop[i] = 0; nhop[i] = appseg->hcount[i];}
   }
   */
 
-  if(msdflag) {// MSD calculation 
+  if(msdflag) {// MSD calculation
     int *element = appseg->element;
     for(i=VAC; i<nelement; i++) msd[i] = 0.0;
 
     for(int i = 0; i < nlocal; i++) {
        msd[element[i]] += appseg->disp[3][i];
-    } 
+    }
   }
 
   for (int i = 0; i < nlist; i++) {
@@ -266,7 +266,7 @@ void DiagSeg::compute()
     else if (which[i] == CE7) ivalue = sites[CE7];
     else if (which[i] == CE8) ivalue = sites[CE8];
 
-    else if (which[i] == cVAC) ivalue = csites[VAC]; // time averaged concentration 
+    else if (which[i] == cVAC) ivalue = csites[VAC]; // time averaged concentration
     else if (which[i] == cINT) ivalue = csites[INT];
     else if (which[i] == cCE1) ivalue = csites[CE1];
     else if (which[i] == cCE2) ivalue = csites[CE2];
@@ -277,7 +277,7 @@ void DiagSeg::compute()
     else if (which[i] == cCE7) ivalue = csites[CE7];
     else if (which[i] == cCE8) ivalue = csites[CE8];
 
-    else if (which[i] == dVAC && sites[VAC] > 0) dvalue = msd[VAC]/sites[VAC]; // MSD 
+    else if (which[i] == dVAC && sites[VAC] > 0) dvalue = msd[VAC]/sites[VAC]; // MSD
     else if (which[i] == dINT && sites[INT] > 0) dvalue = msd[INT]/sites[INT];
     else if (which[i] == dCE1 && sites[CE1] > 0) dvalue = msd[CE1]/sites[CE1];
     else if (which[i] == dCE2 && sites[CE2] > 0) dvalue = msd[CE2]/sites[CE2];
@@ -287,20 +287,20 @@ void DiagSeg::compute()
     else if (which[i] == dCE6 && sites[CE6] > 0) dvalue = msd[CE6]/sites[CE6];
     else if (which[i] == dCE7 && sites[CE7] > 0) dvalue = msd[CE7]/sites[CE7];
     else if (which[i] == dCE8 && sites[CE8] > 0) dvalue = msd[CE8]/sites[CE8];
-    
-    else if (which[i] == energy) dvalue = appseg->total_energy(); //system energy 
-    else if (which[i] > sink && which[i] < recombine)  ivalue = 0; //to be added later 
-    else if (which[i] == FPair) ivalue = appseg->nFPair; //number of reocmbination 
+
+    else if (which[i] == energy) dvalue = appseg->total_energy(); //system energy
+    else if (which[i] > sink && which[i] < recombine)  ivalue = 0; //to be added later
+    else if (which[i] == FPair) ivalue = appseg->nFPair; //number of reocmbination
     else if (which[i] == selfion) ivalue = appseg->nself_ion; //number of selfionn
     else if (which[i] == recombine) ivalue = appseg->nrecombine[VAC]; //number of reocmbination
     else if (which[i] == vabsorb) {
       int nabsorb = 0;
       int nsink = appseg->nsink;
-      for(int i = 1; i < nsink+1; i++) { // sink id starts from 1 
+      for(int i = 1; i < nsink+1; i++) { // sink id starts from 1
          nabsorb += appseg->nabsorption[VAC][i];
       }
       ivalue = nabsorb;
-    } 
+    }
     else if (which[i] == iabsorb) {
       int nabsorb = 0;
       int nsink = appseg->nsink;
@@ -308,21 +308,21 @@ void DiagSeg::compute()
          nabsorb += appseg->nabsorption[INT][i];
       }
       ivalue = nabsorb;
-    } 
-    else if (which[i] >= ris && which[i] < lij) { // ris  
-      int id = which[i] - ris; 
+    }
+    else if (which[i] >= ris && which[i] < lij) { // ris
+      int id = which[i] - ris;
       dvalue = appseg->ris_total[id];
     }
-    else if (which[i] >= lij && which[i] < sro) { // onsager  
-      int id2 = (which[i] - lij)%10; 
+    else if (which[i] >= lij && which[i] < sro) { // onsager
+      int id2 = (which[i] - lij)%10;
       int id1 = (which[i] - lij - id2)/10;
       dvalue = appseg->Lij[id1][id2]; // calcualted in appseg->onsager()
     }
-    else if (which[i] >= sro) { // short range order   
-      int id2 = (which[i] - sro)%10; 
-      int id1 = (which[i] - sro - id2)/10; 
-      appseg->short_range_order(); // compute short range order 
-      dvalue = appseg->sro[id1][id2];  
+    else if (which[i] >= sro) { // short range order
+      int id2 = (which[i] - sro)%10;
+      int id1 = (which[i] - sro - id2)/10;
+      appseg->short_range_order(); // compute short range order
+      dvalue = appseg->sro[id1][id2];
     }
 
     if(which[i] > cCE8) nfloater++;

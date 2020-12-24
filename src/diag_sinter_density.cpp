@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -33,7 +33,7 @@ using namespace SPPARKS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-DiagSinterDensity::DiagSinterDensity(SPPARKS *spk, int narg, char **arg) : 
+DiagSinterDensity::DiagSinterDensity(SPPARKS *spk, int narg, char **arg) :
   Diag(spk,narg,arg)
 {
   if (app->appclass != App::LATTICE)
@@ -46,7 +46,7 @@ void DiagSinterDensity::init()
 {
   appsinter = (AppSinter *) app;
   nlocal = appsinter->nlocal;
-  density = 0.0; 
+  density = 0.0;
 
 }
 
@@ -64,7 +64,7 @@ void DiagSinterDensity::compute()
 	if ( !init_flag ) {
 		initialize_parameters_density_calculation();
 		init_flag = true;
-//		printf("xstart_den: %d xend_den: %d ystart_den: %d yend_den: %d zstart_den: %d zend_den: %d\n", xstart_density, xend_density, ystart_density, yend_density, zstart_density, zend_density ); 
+//		printf("xstart_den: %d xend_den: %d ystart_den: %d yend_den: %d zstart_den: %d zend_den: %d\n", xstart_density, xend_density, ystart_density, yend_density, zstart_density, zend_density );
 	}
 	
 	int *spin = appsinter->spin;
@@ -129,7 +129,7 @@ void DiagSinterDensity::initialize_parameters_density_calculation()
 	int nx_density = (int)floor( nx * rcube_fraction );
 	int ny_density = (int)floor( ny * rcube_fraction );
 	int nz_density = (int)floor( nz * rcube_fraction );
-  
+
 	// Open interval: x > xstart_density and x < xend_density ...
 	xstart_density = (nx - nx_density) / 2;
 	xend_density = xstart_density + nx_density;
@@ -141,11 +141,11 @@ void DiagSinterDensity::initialize_parameters_density_calculation()
   int xsize = nx / 3;
   int ysize = ny / 3;
   int zsize = nz / 3;
-  
+
   xstart_density = nx*0.33;
   xend_density = xstart_density + xsize;
   ystart_density = ny*0.33;
   yend_density = ystart_density + ysize;
   zstart_density = nz*0.33;
-  zend_density = zstart_density + zsize; 
+  zend_density = zstart_density + zsize;
 }

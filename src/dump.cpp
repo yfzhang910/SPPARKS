@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -187,7 +187,7 @@ void Dump::write(double time)
 
   pack();
 
-  // multiproc = 1 = each proc writes own data to own file 
+  // multiproc = 1 = each proc writes own data to own file
   // multiproc = 0 = all procs write to one file thru proc 0
   //   proc 0 pings each proc, receives it's data, writes to file
   //   all other procs wait for ping, send their data to proc 0
@@ -211,7 +211,7 @@ void Dump::write(double time)
 	write_data(nlines,buf);
       }
       if (flush_flag) fflush(fp);
-      
+
     } else {
       MPI_Recv(&tmp,0,MPI_INT,0,0,world,&status);
       MPI_Rsend(buf,nme*size_one,MPI_DOUBLE,0,0,world);
@@ -299,7 +299,7 @@ void Dump::openfile()
     filecurrent = new char[strlen(filename) + 16];
     char *ptr = strchr(filename,'*');
     *ptr = '\0';
-    if (padflag == 0) 
+    if (padflag == 0)
       sprintf(filecurrent,"%s%d%s",filename,idump,ptr+1);
     else {
       char bif[8],pad[16];

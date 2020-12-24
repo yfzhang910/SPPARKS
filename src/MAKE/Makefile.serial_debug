@@ -1,4 +1,4 @@
-# serial_debug = RedHat Linux box, g++, no MPI, run valgrind 
+# serial_debug = RedHat Linux box, g++, no MPI, run valgrind
 
 SHELL = /bin/sh
 
@@ -42,7 +42,7 @@ MPI_LIB =	../STUBS/libmpi.a
 # PATH = path for JPEG library
 # LIB = name of JPEG library
 
-JPG_INC =       
+JPG_INC =
 JPG_PATH = 	
 JPG_LIB =	/usr/local/lib/libjpeg.a
 

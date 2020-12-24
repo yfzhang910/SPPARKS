@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -78,7 +78,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype,
               int source, int tag, MPI_Comm comm, MPI_Request *request);
 int MPI_Wait(MPI_Request *request, MPI_Status *status);
 int MPI_Waitall(int n, MPI_Request *request, MPI_Status *status);
-int MPI_Waitany(int count, MPI_Request *request, int *index, 
+int MPI_Waitany(int count, MPI_Request *request, int *index,
                 MPI_Status *status);
 int MPI_Sendrecv(void *sbuf, int scount, MPI_Datatype sdatatype,
 		  int dest, int stag, void *rbuf, int rcount,

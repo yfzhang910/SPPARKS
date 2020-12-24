@@ -5,7 +5,7 @@
 
    Copyright (2008) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level SPPARKS directory.
@@ -43,7 +43,7 @@ DumpText::DumpText(SPPARKS *spk, int narg, char **arg) : Dump(spk, narg, arg)
 
   int def = 0;
   char **argcopy;
-  
+
   if (narg == 4) {
     def = 1;
     narg = 9;
@@ -173,7 +173,7 @@ void DumpText::init_style()
 
   if (iregion >= 0) {
     iregion = domain->find_region(idregion);
-    if (iregion == -1) 
+    if (iregion == -1)
       error->all(FLERR,"Region ID for dump text does not exist");
   }
 
@@ -198,7 +198,7 @@ int DumpText::count()
     memory->sfree(dchoose);
     memory->sfree(clist);
     choose = (int *) memory->smalloc(maxlocal*sizeof(int),"dump:choose");
-    dchoose = (double *) 
+    dchoose = (double *)
       memory->smalloc(maxlocal*sizeof(double),"dump:dchoose");
     clist = (int *) memory->smalloc(maxlocal*sizeof(int),"dump:clist");
   }
@@ -213,7 +213,7 @@ int DumpText::count()
     Region *region = domain->regions[iregion];
     double **xyz = app->xyz;
     for (i = 0; i < nlocal; i++)
-      if (choose[i] && region->match(xyz[i][0],xyz[i][1],xyz[i][2]) == 0) 
+      if (choose[i] && region->match(xyz[i][0],xyz[i][1],xyz[i][2]) == 0)
 	choose[i] = 0;
   }
 
@@ -277,11 +277,11 @@ int DumpText::count()
 	ptr = app->darray[thresh_index[ithresh]];
 	nstride = 1;
       }
-      
+
       // unselect sites that don't meet threshold criterion
-      
+
       value = thresh_value[ithresh];
-      
+
       if (thresh_op[ithresh] == LT) {
 	for (i = 0; i < nlocal; i++, ptr += nstride)
 	  if (choose[i] && *ptr >= value) choose[i] = 0;
@@ -307,11 +307,11 @@ int DumpText::count()
   // compress choose flags into clist
   // nchoose = # of selected atoms
   // clist[i] = local index of each selected atom
-  
+
   nchoose = 0;
   for (i = 0; i < nlocal; i++)
     if (choose[i]) clist[nchoose++] = i;
-  
+
   return nchoose;
 }
 
@@ -394,7 +394,7 @@ void DumpText::write_text(int n, double *buf)
 	fprintf(fp,vformat[j],static_cast<int> (buf[m]));
       else if (vtype[j] == DOUBLE)
 	fprintf(fp,vformat[j],buf[m]);
-      else if (vtype[j] == TAGINT) 
+      else if (vtype[j] == TAGINT)
 	fprintf(fp,vformat[j],static_cast<tagint> (buf[m]));
       m++;
     }
@@ -490,11 +490,11 @@ int DumpText::modify_param(int narg, char **arg)
       nthresh = 0;
       return 2;
     }
-    
+
     if (narg < 4) error->all(FLERR,"Illegal dump_modify command");
-    
+
     // grow threshold arrays
-    
+
     thresh_array = (int *)
       memory->srealloc(thresh_array,(nthresh+1)*sizeof(int),
 		       "dump:thresh_array");
@@ -507,47 +507,47 @@ int DumpText::modify_param(int narg, char **arg)
     thresh_index = (int *)
       memory->srealloc(thresh_index,(nthresh+1)*sizeof(int),
 		       "dump:thresh_index");
-    
+
     // set keyword type of threshold
     // customize by adding to if statement
-    
+
     if (strcmp(arg[1],"id") == 0) thresh_array[nthresh] = ID;
-    
+
     else if (strcmp(arg[1],"site") == 0) {
       if (app->iarray == NULL)
 	error->all(FLERR,"Threshold for a quantity application does not support");
       thresh_array[nthresh] = SITE;
     }
-    
+
     else if (strcmp(arg[1],"x") == 0) thresh_array[nthresh] = X;
     else if (strcmp(arg[1],"y") == 0) thresh_array[nthresh] = Y;
     else if (strcmp(arg[1],"z") == 0) thresh_array[nthresh] = Z;
     else if (strcmp(arg[1],"energy") == 0) thresh_array[nthresh] = ENERGY;
     else if (strcmp(arg[1],"propensity") == 0)
       thresh_array[nthresh] = PROPENSITY;
-    
+
     // integer value = iN
     // double value = dN
-    
+
     else if (arg[1][0] == 'i') {
       thresh_array[nthresh] = IARRAY;
       thresh_index[nthresh] = atoi(&arg[1][1]);
-      if (thresh_index[nthresh] < 1 || 
+      if (thresh_index[nthresh] < 1 ||
 	  thresh_index[nthresh] > app->ninteger)
 	error->all(FLERR,"Threshold for a quantity application does not support");
       thresh_index[nthresh]--;
     } else if (arg[1][0] == 'd') {
       thresh_array[nthresh] = DARRAY;
       thresh_index[nthresh] = atoi(&arg[1][1]);
-      if (thresh_index[nthresh] < 1 || 
+      if (thresh_index[nthresh] < 1 ||
 	  thresh_index[nthresh] > app->ndouble)
 	error->all(FLERR,"Threshold for a quantity application does not support");
       thresh_index[nthresh]--;
-      
+
     } else error->all(FLERR,"Invalid dump_modify threshold operator");
-    
+
     // set operation type of threshold
-    
+
     if (strcmp(arg[2],"<") == 0) thresh_op[nthresh] = LT;
     else if (strcmp(arg[2],"<=") == 0) thresh_op[nthresh] = LE;
     else if (strcmp(arg[2],">") == 0) thresh_op[nthresh] = GT;
@@ -555,11 +555,11 @@ int DumpText::modify_param(int narg, char **arg)
     else if (strcmp(arg[2],"==") == 0) thresh_op[nthresh] = EQ;
     else if (strcmp(arg[2],"!=") == 0) thresh_op[nthresh] = NEQ;
     else error->all(FLERR,"Invalid dump_modify threshold operator");
-    
+
     // set threshold value
-    
+
     thresh_value[nthresh] = atof(arg[3]);
-    
+
     nthresh++;
     return 4;
   }
