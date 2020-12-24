@@ -971,8 +971,19 @@ double AppSeg::site_SP_energy(int i, int j, int estyle)
   if(ei > INT) eng = mbarrier[ei] + eng1i + eng1j - eng0i -eng0j;
 
   //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink
-  if(eisink_flag && (isink[i] > 0 || isink[j] > 0))
-    eng += (eisink[ei][isink[j]] - eisink[ei][isink[i]] + eisink[ej][isink[i]] - eisink[ej][isink[j]])/2.0;
+  if(eisink_flag && (isink[i] > 0 || isink[j] > 0)) {
+	  double eij = eisink[ei][isink[j]];
+	  double eii = eisink[ei][isink[i]];
+	  double eji = eisink[ej][isink[i]];
+	  double ejj = eisink[ej][isink[j]];
+
+          if(eij <= -100) eij = 0.0;
+          if(eii <= -100) eii = 0.0;
+          if(eji <= -100) eji = 0.0;
+          if(ejj <= -100) ejj = 0.0;
+
+    eng += (eij - eii + eji - ejj)/2.0;
+  }
 
   //add elastic contribution if applicable
   if(elastic_flag)
@@ -997,25 +1008,25 @@ double AppSeg::sia_SP_energy(int i, int j, int estyle)
 
   // check if there is an i->j diffusion path
   double dij[3];
-  dij[0] = dij[1] = dij[2] = 0.0;
   for (int k = 0; k < 3; k++) { // vector dij
       dij[k] = xyz[j][k] - xyz[i][k];
       if (periodicity[k] && dij[k] >= lprd[k]/2.0) dij[k] -= lprd[k];
       if (periodicity[k] && dij[k] < -lprd[k]/2.0) dij[k] += lprd[k];
   }
 
-  double prdt = dij[0]*vect[0] + dij[1]*vect[1] + dij[2]*vect[2];
-  if (prdt == 0.0) return -1.0; // dumb1 diffuses to upper or lower planes
+  //double prdt = dij[0]*vect[0] + dij[1]*vect[1] + dij[2]*vect[2];
+  if (dij[itype] == 0.0) return -1.0; // dumb1 diffuses to upper or lower planes
 
   // calcualte barrier if i->j exists
 
   // determine which dumbbell atom diffuses
   int m = 1; // m diffuses
   int n = 2; // n stays at site i
-  if(itype == 0 && dij[0] < 0) m = 2;
-  if(itype == 1 && dij[1] < 0) m = 2;
-  if(itype == 2 && dij[2] < 0) m = 2;
-  if(m == 2) n = 1;
+  if(dij[itype] < 0) {m = 2; n = 1;}
+
+  //if(itype == 0 && dij[0] < 0) m = 2;
+  //if(itype == 1 && dij[1] < 0) m = 2;
+  //if(itype == 2 && dij[2] < 0) m = 2;
 
   sia[1] = dmb1[i];
   sia[2] = dmb2[i];
@@ -1112,8 +1123,19 @@ double AppSeg::sia_SP_energy(int i, int j, int estyle)
   eng = mbarrier[ei] + eng1i + eng1j - eng0i -eng0j;
 
   //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink
-  if(eisink_flag && (isink[i] > 0 || isink[j] > 0))
-    eng += (eisink[ei][isink[j]] - eisink[ei][isink[i]] + eisink[ej][isink[i]] - eisink[ej][isink[j]])/2.0;
+  if(eisink_flag && (isink[i] > 0 || isink[j] > 0)) {
+	  double eij = eisink[ei][isink[j]];
+	  double eii = eisink[ei][isink[i]];
+	  double eji = eisink[ej][isink[i]];
+	  double ejj = eisink[ej][isink[j]];
+
+          if(eij <= -100) eij = 0.0;
+          if(eii <= -100) eii = 0.0;
+          if(eji <= -100) eji = 0.0;
+          if(ejj <= -100) ejj = 0.0;
+
+    eng += (eij - eii + eji - ejj)/2.0;
+  }
 
   //add elastic contribution if applicable
   if(elastic_flag)
@@ -1953,18 +1975,19 @@ void AppSeg::absorption(int i)
   int j,k,m,n,ei,ejd,ntotal;
   double ctotal,cr[10];
 
+  n = isink[i];
+  if(n <= 0) return; // site i is not a sink
+
   ntotal = 0;
   ctotal = 0.0;
   ei = element[i];
   ejd = -1;
-  n = isink[i];
 
   if(ei > INT) return; // currently only absorbs VAC and INT
   if(eisink[ei][n] > -100) return; // not an absorbing sink
   if(ranseg->uniform() > 1.0/sink_mfp[ei][n]) return; // no absorption occurs
 
   nabsorption[ei][n] ++; // number of element ei absorbed by type of isink[i] sink
-
   if(ei == VAC)  { // for vacancy choose a reserved atom to occupy
      for(m = CE1; m < nelement ; m++) {if(nreserve[m][n] > 0) ntotal += nreserve[m][n];} // count all reserved SIAs at sinks
 
