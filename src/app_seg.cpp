@@ -747,14 +747,14 @@ void AppSeg::dumbbell_fraction()
 
  double exp_total = 0.0;
  for (i = CE1; i < nelement; i ++) {
-     for (j = i+1; j < nelement; j ++) {
+     for (j = i; j < nelement; j ++) {
 	 fdumbbell[i][j] = exp(-edumbbell[i][j]/KBT);
          exp_total += fdumbbell[i][j];
      }
  }
 
  for (i = CE1; i < nelement; i ++) {
-     for (j = i+1; j < nelement; j ++) {
+     for (j = i; j < nelement; j ++) {
 	 fdumbbell[i][j] /= exp_total;
          fdumbbell[j][i] = fdumbbell[i][j];
      }
@@ -1044,7 +1044,7 @@ double AppSeg::sia_SP_energy(int i, int j, int estyle)
   element[j] = ei;
   eng1i = sites_energy(i,estyle); // total bonds with i after switch
   eng1j = sites_energy(j,estyle); // total bonds with j after switch
-  eng0i += edumbbell[ej][sia[m]]/2.0; // dumbbell at j contains ej and sia[m]
+  eng1i += edumbbell[ej][sia[m]]/2.0; // dumbbell at j contains ej and sia[m]
 
   // switch back
   element[j] = ej;
