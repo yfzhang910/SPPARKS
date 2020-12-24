@@ -972,15 +972,15 @@ double AppSeg::site_SP_energy(int i, int j, int estyle)
 
   //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink
   if(eisink_flag && (isink[i] > 0 || isink[j] > 0)) {
-	  double eij = eisink[ei][isink[j]];
-	  double eii = eisink[ei][isink[i]];
-	  double eji = eisink[ej][isink[i]];
-	  double ejj = eisink[ej][isink[j]];
+    double eij = eisink[ei][isink[j]];
+    double eii = eisink[ei][isink[i]];
+    double eji = eisink[ej][isink[i]];
+    double ejj = eisink[ej][isink[j]];
 
-          if(eij <= -100) eij = 0.0;
-          if(eii <= -100) eii = 0.0;
-          if(eji <= -100) eji = 0.0;
-          if(ejj <= -100) ejj = 0.0;
+    if(eij <= -100) eij = 0.0;
+    if(eii <= -100) eii = 0.0;
+    if(eji <= -100) eji = 0.0;
+    if(ejj <= -100) ejj = 0.0;
 
     eng += (eij - eii + eji - ejj)/2.0;
   }
@@ -1033,7 +1033,7 @@ double AppSeg::sia_SP_energy(int i, int j, int estyle)
 
   eng0i = sites_energy(i,estyle); //total bonds with i initially,
   eng0j = sites_energy(j,estyle); //total bonds with j initially
-  eng0i += edumbbell[sia[1]][sia[2]]; // add sia formation energy
+  eng0i += edumbbell[sia[1]][sia[2]]/2.0; // add sia formation energy
 
   // remove a dumbbell at i with the element m stays at i (m == sia1)
   element[i] = sia[n];
@@ -1041,75 +1041,10 @@ double AppSeg::sia_SP_energy(int i, int j, int estyle)
   dmb2[i] = -1;
   siatype[i] = -1;
 
-  // form a new dumbbell at j
-  // assign the new dumbbell atoms, not needed right now
-  /*if(siatype[i] == 0) { // [100]
-     if(dij[2] == 0 ) {
-	 siatype[j] = 1; // [010]
-	 if(dij[1] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     } else {
-	 siatype[j] = 2; // [001]
-	 if(dij[2] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     }
-  } else if(siatype[i] == 1) {// [010]
-     if(dij[2] == 0 ) {
-	 siatype[j] = 0; // [100]
-	 if(dij[0] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     } else {
-	 siatype[j] = 2; // [001]
-	 if(dij[2] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     }
-  } else { // [001]
-     if(dij[1] == 0 ) {
-	 siatype[j] = 0; // [100]
-	 if(dij[0] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     } else {
-	 siatype[j] = 1; // [010]
-	 if(dij[1] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     }
-  }*/
-
   element[j] = ei;
-
   eng1i = sites_energy(i,estyle); // total bonds with i after switch
   eng1j = sites_energy(j,estyle); // total bonds with j after switch
-  eng0i += edumbbell[ej][sia[m]]; // dumbbell at j contains ej and sia[m]
+  eng0i += edumbbell[ej][sia[m]]/2.0; // dumbbell at j contains ej and sia[m]
 
   // switch back
   element[j] = ej;
@@ -1124,15 +1059,15 @@ double AppSeg::sia_SP_energy(int i, int j, int estyle)
 
   //Contribution from segregation energy difference before and after switch; defects one step away from sink will automatically jump to sink
   if(eisink_flag && (isink[i] > 0 || isink[j] > 0)) {
-	  double eij = eisink[ei][isink[j]];
-	  double eii = eisink[ei][isink[i]];
-	  double eji = eisink[ej][isink[i]];
-	  double ejj = eisink[ej][isink[j]];
+    double eij = eisink[ei][isink[j]];
+    double eii = eisink[ei][isink[i]];
+    double eji = eisink[ej][isink[i]];
+    double ejj = eisink[ej][isink[j]];
 
-          if(eij <= -100) eij = 0.0;
-          if(eii <= -100) eii = 0.0;
-          if(eji <= -100) eji = 0.0;
-          if(ejj <= -100) ejj = 0.0;
+    if(eij <= -100) eij = 0.0;
+    if(eii <= -100) eii = 0.0;
+    if(eji <= -100) eji = 0.0;
+    if(ejj <= -100) ejj = 0.0;
 
     eng += (eij - eii + eji - ejj)/2.0;
   }
@@ -1498,6 +1433,9 @@ void AppSeg::SIA_switch(int i, int j)
   nsites_local[ej] --;
 
   // determine the atom that diffuses
+  // determine the initial and the resulting sia types and dumbbell atoms
+
+  int jm = 1; // new dumbbellindex of m at j site
   int m = 1; // m diffuses
   int n = 2; // n stays
   int sia[3];
@@ -1506,86 +1444,36 @@ void AppSeg::SIA_switch(int i, int j)
   sia[2] = dmb2[i];
 
   double dij[3];
-  dij[0] = dij[1] = dij[2] = 0.0;
   for (int k = 0; k < 3; k++) { // vector dij
       dij[k] = xyz[j][k] - xyz[i][k];
       if (periodicity[k] && dij[k] >= lprd[k]/2.0) dij[k] -= lprd[k];
       if (periodicity[k] && dij[k] < -lprd[k]/2.0) dij[k] += lprd[k];
+      if (dij[k] != 0.0 && k != itype) {
+	 siatype[j] = k;
+	 if(dij[k] > 0) jm = 2;
+      }
   }
 
-  if(itype == 0 && dij[0] < 0) m = 2;
-  if(itype == 1 && dij[1] < 0) m = 2;
-  if(itype == 2 && dij[2] < 0) m = 2;
-  if(m == 2) n = 1;
-
-  // determine the initial and the resulting sia types and dumbbell atoms
-  if(itype == 0) { // [100]
-     if(dij[2] == 0 ) {
-	 siatype[j] = 1; // [010]
-	 if(dij[1] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     } else {
-	 siatype[j] = 2; // [001]
-	 if(dij[2] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     }
-  } else if(itype == 1) {// [010]
-     if(dij[2] == 0 ) {
-	 siatype[j] = 0; // [100]
-	 if(dij[0] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     } else {
-	 siatype[j] = 2; // [001]
-	 if(dij[2] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     }
-  } else { // [001]
-     if(dij[1] == 0 ) {
-	 siatype[j] = 0; // [100]
-	 if(dij[0] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     } else {
-	 siatype[j] = 1; // [010]
-	 if(dij[1] > 0) {
-	    dmb1[j] = ej;
-	    dmb2[j] = sia[m];
-	 }  else {
-	    dmb2[j] = ej;
-	    dmb1[j] = sia[m];
-	 }
-     }
-  }
+  if(dij[itype] < 0) {m = 2; n = 1;}
 
   element[i] = sia[n];
   siatype[i] = -1;
   dmb1[i] = -1;
   dmb2[i] = -1;
+
   element[j] = ei;
+  if (jm == 1) {
+     dmb1[j] = sia[m];
+     dmb2[j] = ej;
+  } else {
+     dmb2[j] = sia[m];
+     dmb1[j] = ej;
+  }
+
+  //diagnose the diffusion path 
+  //fprintf(screen, "Debug SIA diffusion i  %d %f %f %f \n", itype,xyz[i][0],xyz[i][1],xyz[i][2]);
+  //fprintf(screen, "Debug SIA diffusion j  %d %f %f %f \n", siatype[j],xyz[j][0],xyz[j][1],xyz[j][2]);
+
   nsites_local[element[i]] ++;
   nsites_local[element[j]] ++;
 
