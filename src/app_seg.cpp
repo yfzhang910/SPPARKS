@@ -1103,8 +1103,8 @@ double AppSeg::sia_SP_energy(int i, int j, int estyle)
   if(elastic_flag)
     eng += (elastic_energy(j,ei) - elastic_energy(i,ei) + elastic_energy(i,ej) - elastic_energy(j,ej))/2.0;
 
-  //add sia type dependent correction
-  eng += emdumbbell[sia[1]][sia[2]];
+  //add barrier correction by averaging starting and ending sia, in order to satisfy detailed balance
+  eng += (emdumbbell[sia[1]][sia[2]] + emdumbbell[ej][sia[m]])/2;
 
   return eng;
 }
