@@ -29,13 +29,14 @@ enum{inter,floater};                              		// data type
 enum{VAC=0,INT,CE1,CE2,CE3,CE4,CE5,CE6,CE7,CE8};   		// CE: chemical element
 enum{hVAC=10,hINT,hCE1,hCE2,hCE3,hCE4,hCE5,hCE6,hCE7,hCE8}; 	// hop steps for each element
 enum{sink=20};                                    		// number of sink absorption
-enum{recombine=30,FPair,selfion,vabsorb,iabsorb};         		// number of recombination, all integers till here
-enum{cVAC=40,cINT,cCE1,cCE2,cCE3,cCE4,cCE5,cCE6,cCE7,cCE8}; 	// time averaged concentration
-enum{dVAC=50,dINT,dCE1,dCE2,dCE3,dCE4,dCE5,dCE6,dCE7,dCE8}; 	// MSD
-enum{energy=60,treal,fvt};                        		// energy and realistic time
-enum{ris=70};                                     		// number of ris
-enum{lij=80};                                     		// onsager coefficient
-enum{sro=180};                                     		// short range order
+enum{recombine=30,FPair,selfion,vabsorb,iabsorb};      		// number of recombination, all integers till here
+enum{sia=40};                                     		// onsager coefficient
+enum{cVAC=60,cINT,cCE1,cCE2,cCE3,cCE4,cCE5,cCE6,cCE7,cCE8}; 	// time averaged concentration
+enum{dVAC=70,dINT,dCE1,dCE2,dCE3,dCE4,dCE5,dCE6,dCE7,dCE8}; 	// MSD
+enum{energy=80,treal,fvt};                        		// energy and realistic time
+enum{ris=90};                                     		// number of ris
+enum{lij=100};                                     		// onsager coefficient
+enum{sro=120};                                     		// short range order
 /* ---------------------------------------------------------------------- */
 
 DiagSeg::DiagSeg(SPPARKS *spk, int narg, char **arg) : Diag(spk,narg,arg)
@@ -92,6 +93,7 @@ void DiagSeg::init()
   csiteflag = 0;
   hopflag = 0;
   msdflag = 0;
+  siaflag = 0;
   risflag = appseg->seg_flag;;
 
   for (int i = 0; i < nlist; i++) {
@@ -163,6 +165,15 @@ void DiagSeg::init()
     else if (strcmp(list[i],"vabsorb") == 0) which[i] = vabsorb;
     else if (strcmp(list[i],"iabsorb") == 0) which[i] = iabsorb;
     else if (strcmp(list[i],"energy") == 0) which[i] = energy;
+
+    // number of each chemical type of sias
+    else if (list[i][0] == 's' && list[i][1] == 'i' && list[i][2] == 'a') {
+      int id = list[i][3] - '0';
+      which[i] = sia + id;
+      siaflag = 1;
+    }
+
+    // sink absorption
     else if (list[i][0] == 's' && list[i][1] == 'i' && list[i][2] == 'n' && list[i][3] == 'k') {
       int id = list[i][4] - '0';
       which[i] = sink + id;
@@ -206,7 +217,7 @@ void DiagSeg::init()
   }
 
   for (int i=0; i < nlist; i++) { itype[i] = inter;
-    if(which[i] >= cVAC) itype[i] = floater;
+    if(which[i] >= sia) itype[i] = floater;
   }
 }
 
@@ -226,9 +237,12 @@ void DiagSeg::compute()
   dvalue = 0.0;
 
   // time dependent segregation profile
-  if (risflag) {
-     appseg->ris_time();
-  }
+  if (risflag) {appseg->ris_time();}
+  // time averaged concengtration
+  if(csiteflag) {csites = appseg->ct;}
+  // number of each chemical type of sias
+  //if(siaflag) {appseg->count_dumbbell();}
+
 
   // site information
   if (siteflag || msdflag) {
@@ -236,8 +250,6 @@ void DiagSeg::compute()
     int *element = appseg->element;
     for(i = 0; i < nlocal; i++) sites[element[i]]++;
   }
-
-  if(csiteflag) {csites = appseg->ct;}
 
   /*
   if(hopflag) {// hop event of each element
@@ -293,7 +305,8 @@ void DiagSeg::compute()
     else if (which[i] == FPair) ivalue = appseg->nFPair; //number of reocmbination
     else if (which[i] == selfion) ivalue = appseg->nself_ion; //number of selfionn
     else if (which[i] == recombine) ivalue = appseg->nrecombine[VAC]; //number of reocmbination
-    else if (which[i] == vabsorb) {
+
+    else if (which[i] == vabsorb) { // absorbed vacan
       int nabsorb = 0;
       int nsink = appseg->nsink;
       for(int i = 1; i < nsink+1; i++) { // sink id starts from 1
@@ -301,7 +314,8 @@ void DiagSeg::compute()
       }
       ivalue = nabsorb;
     }
-    else if (which[i] == iabsorb) {
+
+    else if (which[i] == iabsorb) { // absorbed sia
       int nabsorb = 0;
       int nsink = appseg->nsink;
       for(int i = 1; i < nsink+1; i++) {
@@ -309,10 +323,17 @@ void DiagSeg::compute()
       }
       ivalue = nabsorb;
     }
+
+    else if (which[i] >= sia && which[i] < cVAC) { // # of sias
+      int id = which[i] - sia;
+      dvalue = appseg->nsia[id];
+    }
+
     else if (which[i] >= ris && which[i] < lij) { // ris
       int id = which[i] - ris;
       dvalue = appseg->ris_total[id];
     }
+
     else if (which[i] >= lij && which[i] < sro) { // onsager
       int id2 = (which[i] - lij)%10;
       int id1 = (which[i] - lij - id2)/10;
@@ -325,7 +346,7 @@ void DiagSeg::compute()
       dvalue = appseg->sro[id1][id2];
     }
 
-    if(which[i] > cCE8) nfloater++;
+    if(which[i] >= sia) nfloater++;
     else ninter++;
     MPI_Allreduce(&ivalue,&ivector[ninter],1,MPI_INT,MPI_SUM,world);
     MPI_Allreduce(&dvalue,&dvector[nfloater],1,MPI_DOUBLE,MPI_SUM,world);

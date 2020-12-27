@@ -38,7 +38,7 @@ class DiagSeg : public Diag {
   char **list;
   int *which,*index,*ivector,*itype;
   double *dvector;
-  int siteflag,csiteflag,hopflag,msdflag,risflag;
+  int siteflag,csiteflag,hopflag,msdflag,risflag,siaflag;
 };
 
 }

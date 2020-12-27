@@ -131,7 +131,9 @@ AppSeg::AppSeg(SPPARKS *spk, int narg, char **arg) :
 
   // dumbbell
   edumbbell = NULL;
+  emdumbbell = NULL;
   vdumbbell = NULL;
+  nsia = NULL;
 
   // ris
   ris_type = NULL;
@@ -276,7 +278,12 @@ void AppSeg::input_app(char *command, int narg, char **arg)
   else if (strcmp(command,"edumbbell") == 0) {
 
     memory->create(edumbbell,nelement,nelement,"app/seg:edumbbell");
+    memory->create(emdumbbell,nelement,nelement,"app/seg:emdumbbell");
     memory->create(fdumbbell,nelement,nelement,"app/seg:fdumbbell");
+    number_sia = (nelement-2)*(nelement-1)/2;
+    memory->create(nsia,number_sia,"app/seg:nsia");
+    for (i = 0; i < number_sia; i++ ) {nsia[i] = 0;}
+
     if(narg != nelement*(nelement+1)/2+1) error->all(FLERR,"Illegal edumbbell command");
 
     nn2flag = 1;
@@ -285,6 +292,21 @@ void AppSeg::input_app(char *command, int narg, char **arg)
         ibond = ibonde(i+1,j+1,nelement);
         edumbbell[i][j] = atof(arg[ibond]);
         if (j > i) edumbbell[j][i] = edumbbell[i][j];
+      }
+    }
+  }
+
+  // sia barrier correction based the "type" of sias
+  else if (strcmp(command,"emdumbbell") == 0) {
+    if(narg != nelement*(nelement+1)/2+1) error->all(FLERR,"Illegal emdumbbell command");
+
+    nn2flag = 1;
+
+    for (i = 0; i < nelement; i++ ) {
+      for (j = i; j < nelement; j++ ) {
+        ibond = ibonde(i+1,j+1,nelement);
+        emdumbbell[i][j] = atof(arg[ibond]);
+        if (j > i) emdumbbell[j][i] = emdumbbell[i][j];
       }
     }
   }
@@ -654,6 +676,11 @@ void AppSeg::init_app()
   // initialize predefined INT by adding the two dumbbell atoms proportional to the concentrations
   dumbbell_fraction();
   set_dumbbell();
+  for (i = 0; i < nelement; i++ ) {
+    for (j = 0; j < nelement; j++ ) {
+      emdumbbell[i][j] = 0.0;
+    }
+  }
 
   //check if reactions need to be enabled or disabled
   if(reaction_flag) {
@@ -1076,6 +1103,9 @@ double AppSeg::sia_SP_energy(int i, int j, int estyle)
   if(elastic_flag)
     eng += (elastic_energy(j,ei) - elastic_energy(i,ei) + elastic_energy(i,ej) - elastic_energy(j,ej))/2.0;
 
+  //add sia type dependent correction
+  eng += emdumbbell[sia[1]][sia[2]];
+
   return eng;
 }
 
@@ -1194,6 +1224,7 @@ void AppSeg::site_event(int i, class RandomPark *random)
         element[i] = element[j];
         element[j] = k;
       } else { //SIA switch
+	//count_dumbbell(i); // count the number of each chemical type of sias; enable when needed.
         SIA_switch(i,j);
       }
     }
@@ -1421,6 +1452,38 @@ void AppSeg::clear_events(int i)
 }
 
 /* ----------------------------------------------------------------------
+   count the number of each type of SIAs for their thermodynamic fractions
+------------------------------------------------------------------------- */
+
+void AppSeg::count_dumbbell(int m)
+{
+  int i,j,k;
+
+  /*for(i == 0; i < number_sia; i ++) {nsia[i] = 0.0;}
+  for(m == 0; m < nlocal; m++) {
+     if(siatype[m] >= 0) {
+    	 i = ((dmb1[m]<dmb2[m]) ? dmb1[m] : dmb2[m]) - 1;
+    	 j = ((dmb1[m]>=dmb2[m]) ? dmb1[m] : dmb2[m]) - 1;
+
+         k = (i-1)*(nelement-2) + j - i*(i-1)/2 - 1;
+         nsia[k] ++;
+     }
+  }*/
+
+  // count by the frequencies of each type of sias (maybe more accurate by time?)
+  if(siatype[m] >= 0) {
+     i = ((dmb1[m]<dmb2[m]) ? dmb1[m] : dmb2[m]) - 1;
+     j = ((dmb1[m]>=dmb2[m]) ? dmb1[m] : dmb2[m]) - 1;
+
+     k = (i-1)*(nelement-2) + j - i*(i-1)/2 - 1;
+     //nsia[k] ++; // count by frequency
+     nsia[k] += dt_step; // count by residence time
+     //fprintf(screen,"dt_step %d %f %f\n",k,nsia[k],dt_step);
+  }
+
+  return;
+}
+/* ----------------------------------------------------------------------
    Perform SIA switch with an element
 ------------------------------------------------------------------------- */
 
@@ -1470,7 +1533,7 @@ void AppSeg::SIA_switch(int i, int j)
      dmb1[j] = ej;
   }
 
-  //diagnose the diffusion path 
+  //diagnose the diffusion path
   //fprintf(screen, "Debug SIA diffusion i  %d %f %f %f \n", itype,xyz[i][0],xyz[i][1],xyz[i][2]);
   //fprintf(screen, "Debug SIA diffusion j  %d %f %f %f \n", siatype[j],xyz[j][0],xyz[j][1],xyz[j][2]);
 

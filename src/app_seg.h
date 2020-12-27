@@ -40,7 +40,7 @@ class AppSeg : public AppLattice {
 
  private:
   int engstyle,nn1flag,nn2flag,barrierflag,seg_flag; // 1NN or 2NN bonds
-  int ndiffusion,ndumbbell;
+  int ndiffusion,number_sia,ndumbbell;
   int *type,*element,*dmb1,*dmb2,*aid,*siatype; // variables on each lattice site
   int firsttime;
 
@@ -58,7 +58,9 @@ class AppSeg : public AppLattice {
   double *mbarrier; //migration barriers
   double **vdumbbell; //dumbbell vector
   double **edumbbell; //dumbbell formation energy
+  double **emdumbbell; //dumbbell migration barrier correction
   double **fdumbbell; //relative fraction of dumbbells
+  double *nsia; //number of each type of dumbbells
   int *hcount;
   int periodicity[3]; //periodicity;
   double boxlo[3],lprd[3],volume; //simulation cell size
@@ -187,6 +189,7 @@ class AppSeg : public AppLattice {
   void sink_motion(int);
 
   void set_dumbbell(); // set the dumbbell atoms
+  void count_dumbbell(int); // count the chemicaltype of each dumbbells
 
   int recombine(int); // recombination
   int vacancy_trap(int);
