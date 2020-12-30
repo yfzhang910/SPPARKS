@@ -1802,7 +1802,7 @@ void AppRis::onsager(double t)
 
   if(t <= 0) return;
 
-  for (j = 0; i < 3; i++) {
+  for (i = 0; i < 3; i++) {
   for (j = 0; j < nelement; j++) {
 	  total_disp[i][j] = 0.0;
   }

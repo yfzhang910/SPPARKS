@@ -405,6 +405,7 @@ void AppSeg::input_app(char *command, int narg, char **arg)
   }
 
   // define sinks to defects and element, one sink each line
+  // both sink and sink_interaction commends need to be defined at the same time 
   else if (strcmp(command, "sink") ==0) {
     if(narg != 8) error->all(FLERR,"illegal sink command");
     if(sink_flag == 0) memory->create(isink, nlattice,"app/seg:isink");
@@ -2120,7 +2121,7 @@ void AppSeg::onsager(double t)
 
   if(t <= 0) return;
 
-  for (j = 0; i < 3; i++) {
+  for (i = 0; i < 3; i++) {
   for (j = 0; j < nelement; j++) {
 	  total_disp[i][j] = 0.0;
   }

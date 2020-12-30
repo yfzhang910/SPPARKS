@@ -36,7 +36,7 @@ enum{dVAC=70,dINT,dCE1,dCE2,dCE3,dCE4,dCE5,dCE6,dCE7,dCE8}; 	// MSD
 enum{energy=80,treal,fvt};                        		// energy and realistic time
 enum{ris=90};                                     		// number of ris
 enum{lij=100};                                     		// onsager coefficient
-enum{sro=120};                                     		// short range order
+enum{sro=200};                                     		// short range order
 /* ---------------------------------------------------------------------- */
 
 DiagSeg::DiagSeg(SPPARKS *spk, int narg, char **arg) : Diag(spk,narg,arg)
