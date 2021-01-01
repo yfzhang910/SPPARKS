@@ -16,9 +16,9 @@
 
 /* Things to be done
  * 1. Remove accelerated diffusion
- * 2. Correct diffusion calculation
- * 3. Add corrections to energy and barrier for different interstitials
- * 4. Enable ct_site calculation to show the spacial distribution of concentrations
+ * (Done) 2. Correct diffusion calculation
+ * (Done) 3. Add corrections to energy and barrier for different interstitials
+ * 4. Enable ct_site calculation to show the spatial distribution of concentrations
  * 5. Add full references to models
  * 6. Update reaction
 */
@@ -108,7 +108,8 @@ AppSeg::AppSeg(SPPARKS *spk, int narg, char **arg) :
   isink = sink_shape = sink_normal = sink_segment = NULL;
   sink_range = sink_radius = ci = sink_dr = sink_dt = sink_dt_new = sink_dt_old =  NULL;
   xsink = sink_mfp = NULL;
-  nabsorption = nreserve = NULL;
+  sinksite = NULL;
+  nabsorption = nreserve = sinkid = NULL;
 
   // arrays for reactions
   rsite = rinput = routput = rcount = renable = rtarget = NULL;
@@ -182,6 +183,8 @@ AppSeg::~AppSeg()
     memory->destroy(sink_range);
     memory->destroy(xsink);
     memory->destroy(isink);
+    memory->destroy(sinksite);
+    memory->destroy(sinkid);
     memory->destroy(sink_normal);
     memory->destroy(sink_segment);
     memory->destroy(sink_radius);
@@ -405,7 +408,7 @@ void AppSeg::input_app(char *command, int narg, char **arg)
   }
 
   // define sinks to defects and element, one sink each line
-  // both sink and sink_interaction commends need to be defined at the same time 
+  // both sink and sink_interaction commends need to be defined at the same time
   else if (strcmp(command, "sink") ==0) {
     if(narg != 8) error->all(FLERR,"illegal sink command");
     if(sink_flag == 0) memory->create(isink, nlattice,"app/seg:isink");
@@ -764,6 +767,8 @@ if(concentrationflag) {
     dt_real = dt_akmc = 0.0;
   }*/
 
+  // cacculate sink statistics
+  sink_statistics();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -827,7 +832,7 @@ void AppSeg::set_dumbbell()
 	    j++;
             if(j==nelement) dmb2[i] = nelement - 1;
 	}
-     }	
+     }
  }
 
  return;
@@ -1924,14 +1929,13 @@ void AppSeg::sink_motion(int n)
 ------------------------------------------------------------------------- */
 void AppSeg::absorption(int i)
 {
-  int j,k,m,n,ei,ejd,ntotal;
-  double ctotal,cr[10];
+  int j,k,m,n,ei,ejd,ntotal,rand_me,jbound,jid;
+  double threshold;
 
   n = isink[i];
   if(n <= 0) return; // site i is not a sink
 
   ntotal = 0;
-  ctotal = 0.0;
   ei = element[i];
   ejd = -1;
 
@@ -1943,27 +1947,20 @@ void AppSeg::absorption(int i)
   if(ei == VAC)  { // for vacancy choose a reserved atom to occupy
      for(m = CE1; m < nelement ; m++) {if(nreserve[m][n] > 0) ntotal += nreserve[m][n];} // count all reserved SIAs at sinks
 
-     j = CE1;
      if(ntotal > 0) {// choose from reserved elements at sinks
-       for(m = CE1; m < nelement; m++) cr[m] = 1.0*nreserve[m][n]/ntotal;
-       double rand_me = ranseg->uniform();
-
-       while(j<nelement) {
-           if(rand_me < cr[j])  {ejd = j; break;} // break if found ejd
-           if(nreserve[j][n] > 0) rand_me -= cr[j]; // skip negatively reserved element
-           j++;
-	   if(j==nelement) ejd = nelement-1;
+       j = CE1;
+       jbound = 0;
+       rand_me = static_cast<int>(ranseg->uniform()*ntotal);
+       while(ejd < 0) {
+	 if(nreserve[j][n] > 0) jbound += nreserve[j][n];
+         if(rand_me < jbound) ejd = j;
+	 j++;
+	 if(j == nelement) ejd = j-1;
        }
-     } else {// if none reserved "borrow" from reserved
-       for(m = CE1; m < nelement; m++) ctotal += ci[m]; // count all reserved SIAs at sinks
-       if(ctotal <= 0.0) error->all(FLERR,"no element available to recombine with vacancy at sink");
-       double rand_me = ranseg->uniform()*ctotal;
-
-       while(j<nelement) {
-           if(rand_me < ci[j])  {ejd = j; break;} // break if found ejd
-           rand_me -= ci[j];
-           j++;
-	   if(j==nelement) ejd = nelement-1;
+     } else {// if none reserved "borrow" one proportionally to the nominal composition from reserved
+       while(ejd < 0) {
+           rand_me = static_cast<int>(ranseg->uniform()*nlocal);
+	   if(element[rand_me] > INT) ejd = element[rand_me];
        }
      }
      if(ejd == -1) error->all(FLERR,"no element found to recombine with vacancy at sink");
@@ -1977,15 +1974,28 @@ void AppSeg::absorption(int i)
   } else if (ei == INT) { // randomly reserve one element from a dumbbell
 
      nsites_local[ei] --;
-     if (ranseg->uniform() > 0.5) { //dmb1 occupies the site and dmb2 goes to reservior
+
+     // mix the two dumbbell atoms with the atoms in sink n
+     // then ramdomly select one to be put into reservior
+
+     j = static_cast<int>(ranseg->uniform()*(sinksite[n-1]+2));
+     if(j == sinksite[n-1]+1) { //dmb2 goes to reservior
         element[i] = dmb1[i];
         nreserve[dmb2[i]][n] ++;
-        nsites_local[dmb1[i]] ++;
-     } else { //dmb2 occupies the site and dmb1 goes to reservior
+     } else if(j == sinksite[n-1]) { //dmb1 goes to reservior
         element[i] = dmb2[i];
         nreserve[dmb1[i]][n] ++;
+     } else { // a selected sink atom goes to reservior, dmb1 stays at i and dmb2 goes to the sink site
+        element[i] = dmb1[i];
+	jid = sinkid[n-1][j];
+        nsites_local[element[jid]] --;
+        nreserve[element[jid]][n] ++;
+
+        element[jid] = dmb2[i];
         nsites_local[dmb2[i]] ++;
      }
+
+     nsites_local[element[i]] ++;
      dmb1[i] = -1;
      dmb2[i] = -1;
      siatype[i] = -1;
@@ -2510,8 +2520,42 @@ void AppSeg::sink_creation(int n)
       if(dx < range) isink[i] = n;
     }
   }
+
+  return;
 }
 
+/* ----------------------------------------------------------------------
+  sink_statistics, record the # sites and their ids for each sink
+------------------------------------------------------------------------- */
+
+void AppSeg::sink_statistics()
+{ int i,j,maxsite,id;
+
+  // Record the sink site ids
+
+  maxsite = 0;
+  memory->create(sinksite,nsink,"app/seg:sinksite"); // # of sink sites for each sink
+  for(i = 0; i < nsink; i++) {
+     sinksite[i] = 0;
+     for(j = 0; j < nlocal; j++) {
+        if(isink[j] == i+1) sinksite[i] ++; // sink id starts from 1
+     }
+     if(sinksite[i] > maxsite) maxsite = sinksite[i];
+  }
+
+  memory->create(sinkid,nsink,maxsite,"app/seg:sinkid"); // ids of each sink site for each sink
+  for(i = 0; i < nsink; i++) {
+     id = 0;
+     for(j = 0; j < nlocal; j++) {
+        if(isink[j] == i+1) {
+          sinkid[i][id] = j;
+	  id++;
+	}
+     }
+  }
+
+  return;
+}
 /* ----------------------------------------------------------------------
   calculate dislocation stess field
 ------------------------------------------------------------------------- */

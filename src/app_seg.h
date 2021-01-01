@@ -78,8 +78,8 @@ class AppSeg : public AppLattice {
 
 //parameter for sinks
   int nsink,sink_flag,eisink_flag;
-  int *isink,*sink_shape,*sink_segment,*sink_normal;
-  int **nabsorption,**nreserve;
+  int *isink,*sink_shape,*sink_segment,*sink_normal,*sinksite;
+  int **nabsorption,**nreserve,**sinkid;
   double *ci,*sink_range,*sink_radius,*sink_dr,*sink_dt,*sink_dt_new,*sink_dt_old;
   double **xsink,**eisink,**sink_mfp;
 
@@ -187,6 +187,7 @@ class AppSeg : public AppLattice {
   void sink_creation(int);
   void check_sinkmotion(double);
   void sink_motion(int);
+  void sink_statistics();
 
   void set_dumbbell(); // set the dumbbell atoms
   void count_dumbbell(int); // count the chemicaltype of each dumbbells
