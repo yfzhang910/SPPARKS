@@ -38,7 +38,7 @@
 
 using namespace SPPARKS_NS;
 
-enum{NOOP,BCC,NBCC};                          // all sites are on lattice, specicial site types (e.g., sinks) can be added
+enum{NOOP,BCC,NBCC,WALL};                          // all sites are on lattice, specicial site types (e.g., sinks) can be added
 enum{VAC=0,INT,CE1,CE2,CE3,CE4,CE5,CE6,CE7,CE8};   // CE: chemical element
 
 #define DELTAEVENT 100000
@@ -66,16 +66,18 @@ AppSeg::AppSeg(SPPARKS *spk, int narg, char **arg) :
   if (narg < 1) error->all(FLERR,"Illegal app_style command");
   if (narg >= 2) engstyle = atoi(arg[1]);
   if (engstyle == 2) delpropensity += 1;// increase delpropensity for 2NN interaction
-  if (narg >= 3) concentrationflag = atoi(arg[2]);
-  if (narg >= 4) diffusionflag = atoi(arg[3]);
+  if (narg >= 3) diffusionflag = atoi(arg[2]);
+  // darray 1-4 for msd if activated, followed by concentrations if activated, needs the initial atomic id, defined as aid
+  if (diffusionflag > 0) {ninteger++; ndouble += 4;}
+  if (narg >= 4) concentrationflag = atoi(arg[3]);
   // calculate concentration fiels for each elements, so that concentrationflag = nelement
-  // if (concentrationflag) {ndouble += concentrationflag;}
-  // ndiffusion = diffusionflag;
-  // darray 1-4 for msd if activated, followed by concentrations, needs the initial atomic id, aid
-  if (diffusionflag >= 1) {ninteger++; ndouble += 4;}
+  if (concentrationflag) {
+     ndiff = 4*diffusionflag;
+     ndouble += concentrationflag+1;
+  }
 
   create_arrays();
-
+ 
   firsttime = 1;
   esites = NULL;
   echeck = NULL;
@@ -244,6 +246,7 @@ void AppSeg::input_app(char *command, int narg, char **arg)
     memory->create(ct_new,nelement,"app/seg:ct_new"); //time averaged concentration
     memory->create(ebond1,nelement,nelement,"app/seg:ebond1"); // 1NN bond energy
     if(diffusionflag) memory->create(Lij,nelement,nelement,"app/seg:Lij"); //Onsager coefficient
+    if(concentrationflag) memory->create(ct_site,nelement,nlocal,"app/seg:ct_site"); //site coefficient
 
     hcount = new int [nelement]; // total numner of switching with a vacancy;
 
@@ -624,7 +627,7 @@ void AppSeg::grow_app()
   dmb2 = iarray[4]; // dumbbell atom 2
 
   if(diffusionflag)   aid = iarray[4]; // initially set as global ID, must use set i3 unique in command line
-  if(diffusionflag)   disp = darray; // msd; zero initially
+  if(diffusionflag || concentrationflag)   disp = darray; // msd; zero initially
 }
 
 /* ----------------------------------------------------------------------
@@ -667,7 +670,7 @@ void AppSeg::init_app()
   for ( i = 0; i < nelement; i++) nsites_local[i] = 0;
 
   for ( i = 0; i < nlocal; i++) {
-    if (type[i] < BCC || type[i] > NBCC) (FLERR,"One or more sites have invalid crystal type");
+    if (type[i] < BCC || type[i] > WALL) (FLERR,"One or more sites have invalid crystal type");
     if (element[i] < VAC || element[i] > CE8) (FLERR,"One or more sites have invalid chemical type");
     nsites_local[element[i]]++;
   }
@@ -739,9 +742,12 @@ if(concentrationflag) {
   for(i = 0; i < nelement; i ++) {
      ct[i] = 0.0;
      ct_new[i] = 0.0;
-     //for(j = 0; j < nlocal; j ++) {
-	//ct_site[j][i] = 0.0;
-     //}
+
+     //initiallize initial concentration 
+     for(j = 0; j < nlocal; j ++) {
+	ct_site[i][j] = 0.0;
+	disp[i+ndiff][j] = 0.0;
+     }
   }
 }
 
@@ -1160,6 +1166,7 @@ double AppSeg::site_propensity(int i)
   if (ei == VAC) { // vacancy hopping
     for (j = 0; j < numneigh[i]; j++) {
       jid = neighbor[i][j];
+      if(type[jid] == WALL) continue; // no crossing the wall
       if(element[jid] <= INT) continue; // no vacancy-SIA exchange;
       ebarrier = site_SP_energy(i,jid,engstyle); // diffusion barrier
 
@@ -1172,6 +1179,7 @@ double AppSeg::site_propensity(int i)
   } else if (ei > VAC) {// SIA hopping
     for (j = 0; j < numneigh[i]; j++) {
       jid = neighbor[i][j];
+      if(type[jid] == WALL) continue; // no crossing the wall
       if(element[jid] == INT) continue; // no SIA-SIA exchange;
 
       ebarrier = sia_SP_energy(i,jid,engstyle); //
@@ -1944,6 +1952,7 @@ void AppSeg::absorption(int i)
   if(ranseg->uniform() > 1.0/sink_mfp[ei][n]) return; // no absorption occurs
 
   nabsorption[ei][n] ++; // number of element ei absorbed by type of isink[i] sink
+  //fprintf(screen,"absorption %d %d \n",nabsorption[ei][n],ei);
   if(ei == VAC)  { // for vacancy choose a reserved atom to occupy
      for(m = CE1; m < nelement ; m++) {if(nreserve[m][n] > 0) ntotal += nreserve[m][n];} // count all reserved SIAs at sinks
 
@@ -2123,11 +2132,12 @@ double AppSeg::total_energy( )
 
 /* ----------------------------------------------------------------------
   calculate the Onsager coefficient based on atomic displacement
+  Lij=<DR_i>*<Dr_j>/6VKbTt; 
 ------------------------------------------------------------------------- */
 void AppSeg::onsager(double t)
 {
   int i,j;
-  double dx,total_disp[3][10];
+  double total_disp[3][10];
 
   if(t <= 0) return;
 
@@ -2200,12 +2210,12 @@ void AppSeg::short_range_order()
 void AppSeg::ris_time()
 {
   int i,j,ncell;
-  int **icell;
+  double **icell;
 
   ncell = static_cast<int>(lprd[2]); // bin size = 1
-  icell = new int *[ncell];
+  icell = new double *[ncell];
   for(i = 0; i < ncell; i++) {
-     icell[i] = new int[nelement];
+     icell[i] = new double[nelement];
   }
 
   for(i = 0; i < nelement; i++) ris_total[i] = 0.0;
@@ -2216,7 +2226,11 @@ void AppSeg::ris_time()
 
   for(i = 0; i < nlocal; i++) {
      int iz = static_cast<int>(xyz[i][2] - boxlo[2]);
-     icell[iz][element[i]] += 1;
+     if(concentrationflag) {
+       icell[iz][element[i]] += disp[ndiff+element[i]][i]; 
+     } else {
+       icell[iz][element[i]] += 1.0;
+     }
   }
 
   int nlayer = nlocal/ncell;
@@ -2243,22 +2257,31 @@ void AppSeg::concentration_field(double dt)
 {
   dt_new += dt; // update time interval
   for(int i = 0; i < nlocal; i++) {
-     ct_new[element[i]] += dt;
-     //ct_site[i][element[i]] += dt;
+     ct_new[element[i]] += dt; // total concentration
+     ct_site[element[i]][i] += dt; // site concentration
   }
 
   return;
 }
 
 /* ----------------------------------------------------------------------
-  update time averaged concentrations
+  update time averaged total concentration concentrations
 ------------------------------------------------------------------------- */
 void AppSeg::time_averaged_concentration()
 {
+  if(dt_new <= 0) return;
+
   for(int i = 0; i < nelement; i++) { // ct = c*t / dt
-     if(dt_new > 0.0) ct[i] = ct_new[i]/dt_new/nlocal;
-     ct_new[i] = 0.0;
+     ct[i] = ct_new[i]/dt_new/nlocal; //time and spatial average
+     ct_new[i] = 0.0; //start recounting
+
+     for(int j = 0; j < nlocal; j++) {
+	disp[ndiff+i][j] = ct_site[i][j]/dt_new; //time average
+	ct_site[i][j] = 0.0; //start recounting
+
+     }
   }
+
   dt_new = 0.0;
 }
 

@@ -40,7 +40,7 @@ class AppSeg : public AppLattice {
 
  private:
   int engstyle,nn1flag,nn2flag,barrierflag,seg_flag; // 1NN or 2NN bonds
-  int ndiffusion,number_sia,ndumbbell;
+  int ndiff,number_sia,ndumbbell;
   int *type,*element,*dmb1,*dmb2,*aid,*siatype; // variables on each lattice site
   int firsttime;
 
@@ -107,7 +107,7 @@ class AppSeg : public AppLattice {
   double fpfreq,fpdistance,self_ion_ratio;
 
 //parameter for time averaged concentration
-  double *ct,*ct_new,dt_new;
+  double **ct_site,*ct,*ct_new,dt_new;
 
 //parameter for ris calculation
   int *ris_type;

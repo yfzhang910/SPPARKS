@@ -14,7 +14,7 @@
   create_sites	box value i1 1
   set           i2 value 1 
   # set           i3 unique  
-  set           i2 value 2 if i1 = 1 fraction 0.2  # vacancy
+  set           i2 value 2 if i1 = 1 fraction 0.1  # vacancy
   # set           i2 value 3 if i1 = 1 fraction 0.0134 # Cu  
   # set         i2 value 4 if i1 = 1 fraction 0.01  # Ni
   # set         i2 value 5 if i1 = 1 fraction 0.015 # Mn 
@@ -37,11 +37,11 @@
 # c11, c12, c44, ninteg, dcore 
 # dtype (1 straight, 2 loop), burgers[3], xcore[3],line_vector,dradius,nsegment
 
-#  moduli        243 145 116 21 0.36  
-#  dislocation   1  1 0 0  0 0 0  1  5.0  40  
+  moduli        243 145 116 21 0.36  
+  dislocation   1  1 0 0  0 0 0  1  5.0  40  
 
 # delta_v (eV/GPa)        V          Cu          Ni            Mn   (Si 0.00011) 
-#  elastic_interaction   2 0.0  3 0.5   4  0.00075   5  0.00022  
+  elastic_interaction     2 -0.01    3 0.005     4  0.00075    5  0.00022  
 
 # sink_type, strength, shape, location[3], normal, radius, segment  
 # shape: 1 line; 2 polygon; 3 planar, 4 spherical 
@@ -54,15 +54,15 @@
 
 # bfreq rpeak rdamp btypei btypej 
 
-  ballistic   100 5.0 50.0 2 1 
+#  ballistic   100 5.0 50.0 2 1 
 
 # temperature in units of Kelvin  
 
   temperature	  473 
 
   diag_style      rpv stats yes list energy vac  
-  stats           1000000  
-  dump            1 text 10000000.0 *.dump id i2 x y z 
+  stats           1e6
+  dump            1 text 1e7 *.dump id i2 x y z
 
   reset_time      0
-  run             1000000000
+  run             1e9
