@@ -626,7 +626,7 @@ void AppSeg::grow_app()
   dmb1 = iarray[3]; // dumbbell atom 1
   dmb2 = iarray[4]; // dumbbell atom 2
 
-  if(diffusionflag)   aid = iarray[4]; // initially set as global ID, must use set i3 unique in command line
+  if(diffusionflag)   aid = iarray[5]; // initially set as global ID, must use set i3 unique in command line
   if(diffusionflag || concentrationflag)   disp = darray; // msd; zero initially
 }
 
