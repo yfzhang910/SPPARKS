@@ -63,7 +63,7 @@ class AppSeg : public AppLattice {
   double *nsia; //number of each type of dumbbells
   int *hcount;
   int periodicity[3]; //periodicity;
-  double boxlo[3],lprd[3],volume; //simulation cell size
+  double total_disp[3][10],boxlo[3],lprd[3],volume; //simulation cell size
 
   int nrecombine[9]; //number of recombination event
 

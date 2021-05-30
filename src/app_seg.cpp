@@ -733,6 +733,12 @@ void AppSeg::init_app()
 	   Lij[i][j] = 0.0;
 	}
     }
+
+    for (i = 0; i < 3; i++) {
+    	for (j = 0; j < nelement; j++) {
+	   total_disp[i][j] = 0.0;
+        } 
+    }
   }
 
  //initialize the concentration vectors
@@ -1245,9 +1251,10 @@ void AppSeg::site_event(int i, class RandomPark *random)
 
     hcount[element[i]] ++;
 
-    // calculate MSD for each atom if activated. How to implement with defect annihilation???
-    // this needs to be updated to track interstitial diffusion
-    if(diffusionflag) {
+    // calculate MSD for each atom if activated. This is for vacancy diffusion only 
+    // This is valid only without defect generation and annihilation 
+    // MDS calcualtion for SIA diffusion is taken care of in SIA_switch()
+    if(diffusionflag && element[j] == VAC) {
       // switch global atomic id
       k = aid[i];
       aid[i] = aid[j];
@@ -1260,8 +1267,12 @@ void AppSeg::site_event(int i, class RandomPark *random)
         if (periodicity[k] && dij[k] <= -lprd[k]/2.0) dij[k] += lprd[k];
         disp[k][i] += dij[k];
         disp[k][j] -= dij[k];
-      }
 
+	//count total displacement for each element for onsager calculations
+	total_disp[k][element[i]] += dij[k];
+	total_disp[k][element[j]] -= dij[k];
+      }
+      /*
       for (k = 0; k < 3; k++) { //switch
          dij[k] = disp[k][i];
          disp[k][i] = disp[k][j];
@@ -1269,7 +1280,7 @@ void AppSeg::site_event(int i, class RandomPark *random)
       }
       disp[3][i] = disp[0][i]*disp[0][i] + disp[1][i]*disp[1][i] + disp[2][i]*disp[2][i];
       disp[3][j] = disp[0][j]*disp[0][j] + disp[1][j]*disp[1][j] + disp[2][j]*disp[2][j];
-    }
+    */}
 
   } else {// reaction events with non-zero barriers
 
@@ -1503,6 +1514,7 @@ void AppSeg::count_dumbbell(int m)
 
 void AppSeg::SIA_switch(int i, int j)
 {
+  int k;
   int ei = element[i];
   int ej = element[j];
   int itype = siatype[i];
@@ -1521,7 +1533,7 @@ void AppSeg::SIA_switch(int i, int j)
   sia[2] = dmb2[i];
 
   double dij[3];
-  for (int k = 0; k < 3; k++) { // vector dij
+  for (k = 0; k < 3; k++) { // vector dij
       dij[k] = xyz[j][k] - xyz[i][k];
       if (periodicity[k] && dij[k] >= lprd[k]/2.0) dij[k] -= lprd[k];
       if (periodicity[k] && dij[k] < -lprd[k]/2.0) dij[k] += lprd[k];
@@ -1529,6 +1541,9 @@ void AppSeg::SIA_switch(int i, int j)
 	 siatype[j] = k;
 	 if(dij[k] > 0) jm = 2;
       }
+
+      // calcualte displacement for onsager coefficient calculation 
+      if(diffusionflag) total_disp[k][INT] += dij[k];
   }
 
   if(dij[itype] < 0) {m = 2; n = 1;}
@@ -1545,6 +1560,15 @@ void AppSeg::SIA_switch(int i, int j)
   } else {
      dmb2[j] = sia[m];
      dmb1[j] = ej;
+  }
+
+  // calculate displacement for onsager coefficient calculation 
+  // This assumes a dumbbell separation of 1/2 a0
+  // The total displacement of dij[k] is splitted into three atoms 
+  if(diffusionflag) {
+    for (k = 0; k < 3; k++) total_disp[k][sia[m]] += dij[k]/2.0; // displacement of atom that moves
+    total_disp[itype][sia[n]] += dij[itype]/2.0; // atom that stays moves by half of a dumbbell separation 
+    total_disp[siatype[j]][ej] += dij[siatype[j]]/2.0; // the new dumbbell atom moves by half of a dumbbell separation. Displacement along the 3rd direction is zero. 
   }
 
   //diagnose the diffusion path
@@ -1940,7 +1964,7 @@ void AppSeg::absorption(int i)
   int j,k,m,n,ei,ejd,ntotal,rand_me,jbound,jid;
   double threshold;
 
-  n = isink[i];
+  n = isink[i]; //sink id
   if(n <= 0) return; // site i is not a sink
 
   ntotal = 0;
@@ -1986,6 +2010,7 @@ void AppSeg::absorption(int i)
 
      // mix the two dumbbell atoms with the atoms in sink n
      // then ramdomly select one to be put into reservior
+     // the probability of dumb1 or dumb2 or a sink atom to go to resevior is 1/(nsink_site+1) 
 
      j = static_cast<int>(ranseg->uniform()*(sinksite[n-1]+2));
      if(j == sinksite[n-1]+1) { //dmb2 goes to reservior
@@ -2137,10 +2162,10 @@ double AppSeg::total_energy( )
 void AppSeg::onsager(double t)
 {
   int i,j;
-  double total_disp[3][10];
+  //double total_disp[3][10];
 
   if(t <= 0) return;
-
+/*
   for (i = 0; i < 3; i++) {
   for (j = 0; j < nelement; j++) {
 	  total_disp[i][j] = 0.0;
@@ -2153,7 +2178,7 @@ void AppSeg::onsager(double t)
      total_disp[1][element[i]] += disp[1][i];
      total_disp[2][element[i]] += disp[2][i];
   }
-
+*/
   for (i = 0; i < nelement; i++) {
   for (j = i; j < nelement; j++) {
       Lij[i][j] = total_disp[0][i]*total_disp[0][j] + total_disp[1][i]*total_disp[1][j]+total_disp[2][i]*total_disp[2][j];
